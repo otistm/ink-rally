@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.1
+- Fixed the small up-and-down judder as the car drives. The car now glides smoothly, especially on phones with fast (90 or 120 Hz) screens.
+- The car is about a third bigger on screen, and the camera sits slightly closer.
+
 ## 0.3.0
 - Arcade handling. The car turns the moment you steer, at any speed. Turn hard into a bend and it swings into a power slide instead of spinning out.
 - Drift boost: hold a slide through a bend, and ink sparks fly off the back wheels. Straighten up for a "Boost!", with flames and extra speed. Hold the slide longer for a "Super boost!".
