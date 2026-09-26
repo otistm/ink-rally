@@ -3,4 +3,4 @@
    ===================================================================== */
 "use strict";
 // Shown on the stages screen. Bump it with every change you ship.
-const VERSION = '0.3.0';
+const VERSION = '0.3.1';

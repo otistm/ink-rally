@@ -4,6 +4,7 @@
    DRAW
    ============================================================ */
 let PX=1/7; // one screen pixel in metres, set each frame
+const CARDRAW=1.5; // the car is drawn larger than life so it reads well at speed
 function roadPath(pts,a,b,off){ ctx.beginPath(); for(let i=a;i<=b;i++){ const p=pts[i], x=p.x+p.nx*off, y=p.y+p.ny*off; i===a?ctx.moveTo(x,y):ctx.lineTo(x,y); } }
 // which stretches of road are on screen, split wherever the surface changes
 function visibleRuns(st,R){
@@ -125,11 +126,11 @@ function drawSigns(R){
     ctx.restore(); });
 }
 function drawCar(){
-  const c=S.car, [sx,sy]=shadowVec(), h=c.z, big=1.25, lift=(1+h*.06)*big; // drawn a little larger than life so it reads at speed
+  const c=S.car, [sx,sy]=shadowVec(), h=c.z, big=CARDRAW, lift=(1+h*.06)*big;
   // shadow stays on the ground; it slides further away the higher the car flies
-  ctx.save(); ctx.translate(c.x+sx*(1.2+h*2.2),c.y+sy*(1.2+h*2.2)); ctx.rotate(c.a); ctx.scale(big,big); ctx.fillStyle=`rgba(0,0,0,${Math.max(.08,.2-h*.03)})`;
+  ctx.save(); ctx.translate(c.rx+sx*(1.2+h*2.2),c.ry+sy*(1.2+h*2.2)); ctx.rotate(c.ra); ctx.scale(big,big); ctx.fillStyle=`rgba(0,0,0,${Math.max(.08,.2-h*.03)})`;
   ctx.beginPath(); ctx.roundRect?ctx.roundRect(-2.1,-.95,4.2,1.9,.55):ctx.rect(-2.1,-.95,4.2,1.9); ctx.fill(); ctx.restore();
-  ctx.save(); ctx.translate(c.x,c.y); ctx.rotate(c.a); ctx.scale(lift*(1-S.sq*.22),lift*(1+S.sq*.4));
+  ctx.save(); ctx.translate(c.rx,c.ry); ctx.rotate(c.ra); ctx.scale(lift*(1-S.sq*.22),lift*(1+S.sq*.4));
   const ink=INK*PX, steerA=c.steer*.5;
   // wheels, the front two turned with the steering
   ctx.fillStyle='#000';
@@ -156,7 +157,7 @@ function drawCar(){
 function drawLabels(){
   S.parts.forEach(p=>{ if(p.k!=='label') return; const u=p.t/p.life, c=S.car;
     const sc=u<.1?u/.1*1.3:u<.2?1.3-(u-.1)/.1*.4:u<.3?.9+(u-.2)/.1*.1:1, sy=sc>1?sc*(2-sc):sc;
-    ctx.save(); ctx.translate(c.x,c.y); ctx.rotate(-cam.rot); ctx.scale(PX,PX); ctx.translate(0,-46-u*26); ctx.scale(sc,sy);
+    ctx.save(); ctx.translate(c.rx,c.ry); ctx.rotate(-cam.rot); ctx.scale(PX,PX); ctx.translate(0,-46-u*26); ctx.scale(sc,sy);
     ctx.globalAlpha=u>.75?(1-u)/.25:1; ctx.textAlign='center'; ctx.textBaseline='middle';
     ctx.font=`italic 900 ${p.big?21:18}px Fraunces, Georgia, serif`; const w=ctx.measureText(p.text).width+22, h=p.big?32:28;
     ctx.beginPath(); ctx.roundRect?ctx.roundRect(-w/2,-h/2,w,h,h/2):ctx.rect(-w/2,-h/2,w,h);
@@ -174,7 +175,7 @@ function drawBales(R){
 // a boost shoots ink flames out of the exhaust
 function drawFlame(t){
   const c=S.car; if(!(c.boost>0)) return; const k=Math.min(1,c.boost/.3);
-  ctx.save(); ctx.translate(c.x,c.y); ctx.rotate(c.a); ctx.scale(1.25,1.25); ctx.lineCap="round"; ctx.lineJoin="round";
+  ctx.save(); ctx.translate(c.rx,c.ry); ctx.rotate(c.ra); ctx.scale(CARDRAW,CARDRAW); ctx.lineCap="round"; ctx.lineJoin="round";
   for(const y of [-.45,.45]){ const L=(1.4+Math.sin(t*50+y*9)*.4)*k;
     ctx.beginPath(); ctx.moveTo(-2.2,y-.28); ctx.quadraticCurveTo(-2.2-L*.6,y-.3,-2.2-L,y); ctx.quadraticCurveTo(-2.2-L*.6,y+.3,-2.2,y+.28); ctx.closePath();
     ctx.fillStyle='#fff'; ctx.fill(); ctx.lineWidth=1.6*PX; ctx.strokeStyle='#000'; ctx.stroke();
