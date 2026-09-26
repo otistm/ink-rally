@@ -8,22 +8,23 @@ const clamp=(v,a,b)=>v<a?a:v>b?b:v, lerp=(a,b,u)=>a+(b-a)*u;
 function seeded(s){ return ()=>{ s=(s*16807)%2147483647; return (s-1)/2147483646; }; }
 function angDiff(a,b){ let d=(b-a)%TAU; if(d>Math.PI) d-=TAU; if(d<-Math.PI) d+=TAU; return d; }
 
-// The car. Speeds in m/s (44 m/s is about 158 km/h).
-const CAR={len:4.2,wid:1.9,wheelbase:2.6,accel:11,vmax:44,brake:16,reverse:6};
+// The car. Speeds in m/s (48 m/s is about 173 km/h). turn: fastest the nose swings, in radians a second.
+const CAR={len:4.2,wid:1.9,accel:14,vmax:48,brake:20,reverse:7,turn:2.5};
 
-// grip: sideways grip in m/s² (more = corners faster before sliding)
-// rot: how far past the grip the nose can turn (above 1 lets the tail step out; kept gentle for casual play)
-// trac: how much of the engine and brakes reach the ground; top: share of top speed; drag: extra rolling drag
+/* Arcade handling: the nose turns as soon as you steer, and the car's travel swings round to follow it.
+   k: how quickly the travel catches up with the nose (low = long slides)
+   lat: the hardest the travel can bend, in m/s² (faster than this and you slide wide)
+   scrub: how much speed a slide rubs off; trac: engine and brakes; top: share of top speed; drag: rolling drag */
 const SURF={
-  tarmac:{grip:13, rot:1,   trac:1,  top:1,  drag:0,  loose:false,name:'Tarmac'},
-  gravel:{grip:9,  rot:1.04,trac:.82,top:.94,drag:.3, loose:true, name:'Gravel'},
-  snow:  {grip:6.5,rot:1.06,trac:.7, top:.88,drag:.4, loose:true, name:'Snow'},
-  verge: {grip:7.5,rot:1,   trac:.8, top:.85,drag:.8, loose:true, name:'Verge'},
-  grass: {grip:6,  rot:1,   trac:.6, top:.55,drag:3,  loose:true, name:'Grass'}
+  tarmac:{k:7,  lat:26,scrub:.45,trac:1,  top:1,  drag:0,  loose:false,name:'Tarmac'},
+  gravel:{k:4.5,lat:20,scrub:.4, trac:.9, top:.95,drag:.2, loose:true, name:'Gravel'},
+  snow:  {k:3.2,lat:15,scrub:.35,trac:.8, top:.9, drag:.3, loose:true, name:'Snow'},
+  verge: {k:4,  lat:17,scrub:.6, trac:.85,top:.85,drag:.6, loose:true, name:'Verge'},
+  grass: {k:3,  lat:13,scrub:1,  trac:.7, top:.6, drag:2,  loose:true, name:'Grass'}
 };
 // Pacenote grades: 1 is a hairpin-tight bend, 6 is nearly flat out. Radius of each grade in metres.
-const RAD={1:11,2:18,3:28,4:42,5:65,6:100};
-const WIDTH={tarmac:8,gravel:7.5,snow:7.5};
+const RAD={1:14,2:22,3:34,4:50,5:75,6:110};
+const WIDTH={tarmac:12,gravel:11,snow:11};
 const STEP=2; // metres between road samples
 
 /* A stage is written as pacenotes:
@@ -68,9 +69,9 @@ function roadAt(st,x,y,hint){
   const p=P[best], lat=(x-p.x)*p.nx+(y-p.y)*p.ny, along=(x-p.x)*Math.cos(p.a)+(y-p.y)*Math.sin(p.a);
   return {i:best,lat,s:p.s+along,p};
 }
-// The fastest a perfect driver could go: corner speed from grip, then braking and acceleration limits.
+// The fastest a perfect driver could go: corner speed from the grip limit, then braking and acceleration limits.
 function idealTime(st){
-  const P=st.pts, v=P.map(p=>{ const g=SURF[p.surf].grip*.95, kv=Math.abs(p.k); return Math.min(CAR.vmax*SURF[p.surf].top, kv>1e-4?Math.sqrt(g/kv):1e9); });
+  const P=st.pts, v=P.map(p=>{ const g=SURF[p.surf].lat*.95, kv=Math.abs(p.k); return Math.min(CAR.vmax*SURF[p.surf].top, kv>1e-4?Math.sqrt(g/kv):1e9); });
   v[st.start/STEP]=0; // standing start on the line
   for(let i=1;i<P.length;i++){ const sf=SURF[P[i].surf], a=CAR.accel*sf.trac*Math.max(.05,1-v[i-1]/(CAR.vmax*sf.top)); v[i]=Math.min(v[i],Math.sqrt(v[i-1]**2+2*a*STEP)); }
   for(let i=P.length-2;i>=0;i--){ const b=CAR.brake*SURF[P[i].surf].trac; v[i]=Math.min(v[i],Math.sqrt(v[i+1]**2+2*b*STEP)); }

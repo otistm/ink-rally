@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.3.0
+- Arcade handling. The car turns the moment you steer, at any speed. Turn hard into a bend and it swings into a power slide instead of spinning out.
+- Drift boost: hold a slide through a bend, and ink sparks fly off the back wheels. Straighten up for a "Boost!", with flames and extra speed. Hold the slide longer for a "Super boost!".
+- The car drives itself forward now. Your thumb only steers, and pulling down still brakes.
+- The car sits in the middle of the screen, well clear of your thumb. It's drawn a little bigger too.
+- All three stages are rebuilt for arcade driving: wider roads, flowing S-bends, more jumps and fewer hairpins. The trees stand further back.
+- Hay bales line the outside of the bends and bounce you back onto the road instead of stopping you.
+- Old best times were set on the old roads, so they're set aside (kept, not deleted) and every stage starts fresh.
+- Fixed: the car could get stuck hovering just above the ground after a crest, which stopped it sliding.
+
 ## 0.2.0
 - Steering is much more forgiving. The car grips harder and rarely spins its tail out, even when you yank the wheel.
 - If the tail does step out, the car straightens itself up for you.
