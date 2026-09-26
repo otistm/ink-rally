@@ -6,7 +6,7 @@
 const cv=document.getElementById('c'), ctx=cv.getContext('2d');
 let W=0,Hh=0,DPR=1;
 const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
-// x,y: world point at the anchor; z: pixels per metre; rot: screen turn; the car sits low on screen so you see far ahead
+// x,y: world point at the anchor; z: pixels per metre; rot: screen turn; the car sits mid-screen, clear of the thumb
 const cam={x:0,y:0,z:7,rot:0,ax:0,ay:0};
 let PAT={};
 const INK=2.2, PZ=7; // patterns are drawn at PZ pixels per metre and stay stuck to the ground
@@ -33,7 +33,7 @@ function makePatterns(){
 function resize(){
   DPR=Math.min(2,window.devicePixelRatio||1); W=innerWidth; Hh=innerHeight;
   cv.width=Math.round(W*DPR); cv.height=Math.round(Hh*DPR);
-  cam.ax=W/2; cam.ay=Hh*.68; makePatterns();
+  cam.ax=W/2; cam.ay=Hh*.5; makePatterns();
 }
 const shakeOff={x:0,y:0};
 // draw in world metres from here on; line widths must be divided by cam.z to stay the same on screen

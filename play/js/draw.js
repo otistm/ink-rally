@@ -1,4 +1,4 @@
-/* Ink Rally: Drawing the stage, scenery, dust, tyre marks and the car. */
+/* Ink Rally: Drawing the stage, scenery, dust, tyre marks, boosts and the car. */
 "use strict";
 /* ============================================================
    DRAW
@@ -69,10 +69,14 @@ function drawDust(){
 }
 function drawBits(){
   ctx.save(); ctx.strokeStyle='#000'; ctx.lineCap='round';
-  S.parts.forEach(p=>{ if(p.k==='dust') return; const u=p.t/p.life; ctx.globalAlpha=1-u*u; const s=1+p.z*.12;
+  S.parts.forEach(p=>{ if(p.k==='dust'||p.k==='label') return; const u=p.t/p.life; ctx.globalAlpha=1-u*u; const s=1+p.z*.12;
     ctx.save(); ctx.translate(p.x,p.y-p.z*.3); ctx.rotate(p.rot); ctx.scale(s,s);
     if(p.k==='leaf'){ ctx.beginPath(); ctx.ellipse(0,0,.35,.18,0,0,TAU); ctx.fillStyle='#fff'; ctx.fill(); ctx.lineWidth=1.2*PX; ctx.stroke(); }
     else if(p.k==='chip'){ ctx.fillStyle='#000'; ctx.fillRect(-.25,-.12,.5,.24); }
+    else if(p.k==='spark'){ ctx.lineWidth=1.8*PX; ctx.beginPath(); ctx.moveTo(-.35,0); ctx.lineTo(.35,0); ctx.stroke(); }
+    else if(p.k==='star'){ const r=.45; ctx.beginPath(); for(let k=0;k<8;k++){ const a=k/8*TAU, rr=k%2?r*.4:r; k?ctx.lineTo(Math.cos(a)*rr,Math.sin(a)*rr):ctx.moveTo(rr,0); } ctx.closePath();
+      ctx.fillStyle='#fff'; ctx.fill(); ctx.lineWidth=1.4*PX; ctx.stroke(); }
+    else if(p.k==='straw'){ ctx.lineWidth=1.2*PX; ctx.beginPath(); ctx.moveTo(-.3,-.1); ctx.lineTo(.3,.1); ctx.stroke(); }
     else { ctx.lineWidth=1.3*PX; ctx.beginPath(); ctx.moveTo(-.25,.15); ctx.lineTo(0,-.2); ctx.lineTo(.25,.15); ctx.stroke(); }
     ctx.restore(); });
   ctx.restore();
@@ -121,9 +125,9 @@ function drawSigns(R){
     ctx.restore(); });
 }
 function drawCar(){
-  const c=S.car, [sx,sy]=shadowVec(), h=c.z, lift=1+h*.06;
+  const c=S.car, [sx,sy]=shadowVec(), h=c.z, big=1.25, lift=(1+h*.06)*big; // drawn a little larger than life so it reads at speed
   // shadow stays on the ground; it slides further away the higher the car flies
-  ctx.save(); ctx.translate(c.x+sx*(1.2+h*2.2),c.y+sy*(1.2+h*2.2)); ctx.rotate(c.a); ctx.fillStyle=`rgba(0,0,0,${Math.max(.08,.2-h*.03)})`;
+  ctx.save(); ctx.translate(c.x+sx*(1.2+h*2.2),c.y+sy*(1.2+h*2.2)); ctx.rotate(c.a); ctx.scale(big,big); ctx.fillStyle=`rgba(0,0,0,${Math.max(.08,.2-h*.03)})`;
   ctx.beginPath(); ctx.roundRect?ctx.roundRect(-2.1,-.95,4.2,1.9,.55):ctx.rect(-2.1,-.95,4.2,1.9); ctx.fill(); ctx.restore();
   ctx.save(); ctx.translate(c.x,c.y); ctx.rotate(c.a); ctx.scale(lift*(1-S.sq*.22),lift*(1+S.sq*.4));
   const ink=INK*PX, steerA=c.steer*.5;
@@ -148,6 +152,35 @@ function drawCar(){
   ctx.restore();
   ctx.restore();
 }
+// "Boost!" pops up by the car with a squash-and-stretch bounce, always upright on screen
+function drawLabels(){
+  S.parts.forEach(p=>{ if(p.k!=='label') return; const u=p.t/p.life, c=S.car;
+    const sc=u<.1?u/.1*1.3:u<.2?1.3-(u-.1)/.1*.4:u<.3?.9+(u-.2)/.1*.1:1, sy=sc>1?sc*(2-sc):sc;
+    ctx.save(); ctx.translate(c.x,c.y); ctx.rotate(-cam.rot); ctx.scale(PX,PX); ctx.translate(0,-46-u*26); ctx.scale(sc,sy);
+    ctx.globalAlpha=u>.75?(1-u)/.25:1; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.font=`italic 900 ${p.big?21:18}px Fraunces, Georgia, serif`; const w=ctx.measureText(p.text).width+22, h=p.big?32:28;
+    ctx.beginPath(); ctx.roundRect?ctx.roundRect(-w/2,-h/2,w,h,h/2):ctx.rect(-w/2,-h/2,w,h);
+    if(p.big){ ctx.fillStyle='#000'; ctx.fill(); ctx.fillStyle='#fff'; } else { ctx.fillStyle='#fff'; ctx.fill(); ctx.lineWidth=2.2; ctx.strokeStyle='#000'; ctx.stroke(); ctx.fillStyle='#000'; }
+    ctx.fillText(p.text,0,1); ctx.restore(); });
+}
+// round hay bales seen from above: a rolled spiral of straw, wobbling when knocked
+function drawBales(R){
+  const B=S.scene.bales.filter(b=>Math.abs(b.x-cam.x)<R&&Math.abs(b.y-cam.y)<R); if(!B.length) return; const [sx,sy]=shadowVec();
+  ctx.fillStyle='rgba(0,0,0,.1)'; ctx.beginPath(); B.forEach(b=>{ ctx.moveTo(b.x+sx+b.r,b.y+sy); ctx.arc(b.x+sx,b.y+sy,b.r,0,TAU); }); ctx.fill();
+  B.forEach(b=>{ const r=b.r*(b.hit?1+Math.sin(b.hit*50)*b.hit*.25:1);
+    ctx.beginPath(); ctx.arc(b.x,b.y,r,0,TAU); ctx.fillStyle='#fff'; ctx.fill(); ctx.lineWidth=INK*PX; ctx.strokeStyle='#000'; ctx.stroke();
+    ctx.lineWidth=1.1*PX; ctx.beginPath(); for(let k=0;k<=24;k++){ const a=b.a+k/24*TAU*1.6, rr=r*.72*k/24; k?ctx.lineTo(b.x+Math.cos(a)*rr,b.y+Math.sin(a)*rr):ctx.moveTo(b.x,b.y); } ctx.stroke(); });
+}
+// a boost shoots ink flames out of the exhaust
+function drawFlame(t){
+  const c=S.car; if(!(c.boost>0)) return; const k=Math.min(1,c.boost/.3);
+  ctx.save(); ctx.translate(c.x,c.y); ctx.rotate(c.a); ctx.scale(1.25,1.25); ctx.lineCap="round"; ctx.lineJoin="round";
+  for(const y of [-.45,.45]){ const L=(1.4+Math.sin(t*50+y*9)*.4)*k;
+    ctx.beginPath(); ctx.moveTo(-2.2,y-.28); ctx.quadraticCurveTo(-2.2-L*.6,y-.3,-2.2-L,y); ctx.quadraticCurveTo(-2.2-L*.6,y+.3,-2.2,y+.28); ctx.closePath();
+    ctx.fillStyle='#fff'; ctx.fill(); ctx.lineWidth=1.6*PX; ctx.strokeStyle='#000'; ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-2.25,y); ctx.lineTo(-2.2-L*.55,y); ctx.stroke(); }
+  ctx.restore();
+}
 // the thumb's steering wheel: a ring where your thumb landed and a knob that follows it
 function drawStick(){
   const p=IN.ptr; if(!p) return; const dx=clamp(p.x-p.x0,-STEER_PX-10,STEER_PX+10), dy=clamp(p.y-p.y0,-12,BRAKE_PX+BRAKE_RANGE);
@@ -162,7 +195,7 @@ function drawStick(){
 }
 // speed lines at the screen edges when you're flying
 function drawSpeed(t){
-  const v=Math.abs(S.car.vf); if(v<30||RM) return; const k=(v-30)/14;
+  const v=Math.abs(S.car.vf)+(S.car.boost>0?14:0); if(v<30||RM) return; const k=Math.min(1.3,(v-30)/14);
   ctx.save(); ctx.strokeStyle='#000'; ctx.lineCap='round'; ctx.lineWidth=1.5;
   for(let i=0;i<10;i++){ const side=i%2?1:-1, x=side<0?8+((i*37)%40):W-8-((i*29)%40), y=((i*173+t*900)%(Hh+200))-100, l=40+k*50;
     ctx.globalAlpha=.25*k; ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x,y+l); ctx.stroke(); }
@@ -176,6 +209,6 @@ function draw(t){
   worldTransform();
   ctx.fillStyle=S.def.surface==='snow'?PAT.field:PAT.grass; ctx.fillRect(cam.x-R,cam.y-R,R*2,R*2);
   drawRoad(st,R); drawLines(st); drawSkids(R); drawTapes();
-  drawDust(); drawBits(); drawSigns(R); drawCar(); drawCrowd(R,t); drawTrees(R,t); drawBanners(st);
+  drawBales(R); drawDust(); drawBits(); drawSigns(R); drawFlame(t); drawCar(); drawCrowd(R,t); drawTrees(R,t); drawBanners(st); drawLabels();
   screenTransform(); drawSpeed(t); drawStick();
 }

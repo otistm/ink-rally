@@ -38,6 +38,9 @@ function engineSet(speed,gas,slip,loose,on){
 }
 function sfx(k,p=1){
   if(k==='crash'){ noise(.3,.5*p,300,.7); tone(90,.25,'triangle',.35*p,40); }
+  else if(k==='bump'){ tone(110,.12,'sine',.25*p,60); noise(.1,.2*p,900,.8); }
+  else if(k==='charge'){ tone(p>1?1100:760,.09,'triangle',.12); }
+  else if(k==='boost'){ noise(.5,.35*p,1800,.6); tone(220,.45,'sawtooth',.08*p,660); }
   else if(k==='land'){ noise(.12,.3*p,500,.8); tone(70,.15,'sine',.3*p,40); }
   else if(k==='beep'){ tone(660,.18,'square',.08); }
   else if(k==='go'){ tone(990,.4,'square',.1); }

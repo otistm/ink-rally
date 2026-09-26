@@ -14,7 +14,7 @@ function startStage(id){
   S.markI=0; lastClock='';
   cam.x=p.x+Math.cos(p.a)*20; cam.y=p.y+Math.sin(p.a)*20; cam.z=5; cam.rot=-Math.PI/2-p.a;
   closeCard(); hudShow(true); hudStage(); IN.reset(); hush();
-  $('note').hidden=true; hint('Hold anywhere to go');
+  $('note').hidden=true; hint('Slide your thumb to steer');
   say(`${def.name}. Stage start.`,true);
 }
 
@@ -47,7 +47,7 @@ function flowStep(dt){
   if(S.st==='count'){
     S.count-=dt; const n=Math.ceil(S.count);
     if(n!==S.lastCount&&n<=3&&n>=1){ S.lastCount=n; callout(String(n)); sfx('beep'); }
-    if(S.count<=0){ S.st='drive'; callout('Go!'); sfx('go'); hint(IN.down?null:'Hold anywhere to go'); }
+    if(S.count<=0){ S.st='drive'; callout('Go!'); sfx('go'); hint(IN.down?null:'Slide your thumb to steer'); }
     return;
   }
   if(S.st==='drive') S.race+=dt;
@@ -65,7 +65,7 @@ function flowStep(dt){
   const p=c.i<st.pts.length?st.pts[c.i]:st.pts[st.pts.length-1], fwd=(c.vx*Math.cos(p.a)+c.vy*Math.sin(p.a));
   S.wrong=fwd<-3?S.wrong+dt:0;
   const off=Math.abs(c.lat)>p.w/2+3; S.off=off?S.off+dt:0;
-  S.stuck=(Math.abs(c.vf)<1.5&&IN.down&&S.race>1)?S.stuck+dt:0;
+  S.stuck=(Math.abs(c.vf)<1.5&&S.race>2)?S.stuck+dt:0;
   if(Math.abs(c.lat)>60) rescue();
   $('rescue').hidden=!(S.off>1.4||S.stuck>1.6||S.wrong>1.5);
   if(S.wrong>1) hint('Wrong way! Turn around');
@@ -74,6 +74,6 @@ function flowStep(dt){
 // put the car back in the middle of the road, facing the right way; the clock keeps running
 function rescue(){
   const c=S.car, st=S.stage, i=clamp(c.i,0,st.pts.length-1), p=st.pts[i];
-  Object.assign(c,{x:p.x,y:p.y,a:p.a,vx:0,vy:0,w:0,z:0,vz:0,vf:0,vl:0,wheelL:null,wheelR:null});
+  Object.assign(c,{x:p.x,y:p.y,a:p.a,vx:0,vy:0,w:0,z:0,vz:0,vf:0,vl:0,drift:0,charge:0,boost:0,wheelL:null,wheelR:null});
   S.sq=.35; S.sqv=0; S.off=0; S.stuck=0; S.wrong=0; $('rescue').hidden=true; hint(null); sfx('land',.6);
 }

@@ -2,14 +2,16 @@
 "use strict";
 /* ============================================================
    SAVED PROGRESS (localStorage; never rename these keys)
-   inkrally-bests: {stageId:{t, splits:[s1,s2]}}   inkrally-meta: {v:1, voice}
+   inkrally-bests: {stageId:{t, splits:[s1,s2], rev, old}}   inkrally-meta: {v:1, voice}
+   rev is the stage layout the time was set on (missing means 1). A time from an older layout is kept under `old`, never deleted.
    ============================================================ */
 function load(k,d){ try{ const v=JSON.parse(localStorage.getItem(k)); return v&&typeof v==='object'?v:d; }catch(e){ return d; } }
 function store(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
 const bests=load('inkrally-bests',{});
 const meta=Object.assign({v:1,voice:true},load('inkrally-meta',{}));
 voiceOn=meta.voice!==false;
-function bestFor(id){ const b=bests[id]; return b&&isFinite(b.t)?b:null; }
+const revOf=id=>{ const d=STAGES.find(s=>s.id===id); return d&&d.rev||1; };
+function bestFor(id){ const b=bests[id]; return b&&isFinite(b.t)&&(b.rev||1)===revOf(id)?b:null; }
 function medalFor(st,t){ const m=st.medals; return t<=m.gold?'gold':t<=m.silver?'silver':t<=m.bronze?'bronze':null; }
 const MEDAL={gold:'Gold',silver:'Silver',bronze:'Bronze'};
 
@@ -34,7 +36,8 @@ function showHome(){
       <div class="ev"><i>Stage ${i+1} · ${SURF[def.surface].name} · ${(st.length/1000).toFixed(1)} km</i><b>${def.name}</b><span>${def.blurb}</span></div></button>`; }).join('');
   openCard(`<h2 class="logo">Ink Rally</h2><p>Drive fast. Stay on the road. Get trophies.</p>
     <div class="events">${rows}</div>
-    <div class="how"><b>How to drive.</b> Hold anywhere to go. Slide your thumb left or right to steer. Pull it down to brake.<br>
+    <div class="how"><b>How to drive.</b> Your car goes by itself. Slide your thumb left or right to steer, and pull it down to brake.<br>
+    Turn hard and the car slides. Hold the slide through a bend, then straighten up for a <b>boost</b>.<br>
     Your co-driver calls each bend before you reach it. The number is how fast it is: <b>1</b> is a crawl, <b>6</b> is nearly flat out.</div>
     <button class="fbc${voiceOn?' on':''}" id="voiceBtn" aria-pressed="${voiceOn}">Co-driver voice: ${voiceOn?'on':'off'}</button>
     <p class="ver">Version ${VERSION}</p>`,true);
@@ -54,7 +57,8 @@ function showPause(){
 }
 function showFinish(){
   const st=S.stage, id=st.def.id, t=S.finT, prev=bestFor(id), isBest=!prev||t<prev.t, m=medalFor(st,t), pm=prev?medalFor(st,prev.t):null;
-  if(isBest){ bests[id]={t,splits:S.splitT.slice()}; store('inkrally-bests',bests); }
+  if(isBest){ const was=bests[id], old=was&&(was.rev||1)!==revOf(id)?was:was&&was.old;
+    bests[id]={t,splits:S.splitT.slice(),rev:revOf(id)}; if(old) bests[id].old=old; store('inkrally-bests',bests); }
   const rows=[['Gold',st.medals.gold],['Silver',st.medals.silver],['Bronze',st.medals.bronze]].map(r=>({nm:r[0],t:r[1]}));
   rows.push({nm:'You',t,me:true}); rows.sort((a,b)=>a.t-b.t);
   const board=rows.map((r,i)=>`<div class="row${r.me?' me':''}" style="animation-delay:${.3+i*.07}s"><span class="pos">${i+1}</span><span class="nm">${r.nm}</span><i></i><b>${fmt(r.t)}</b></div>`).join('');

@@ -1,4 +1,4 @@
-/* Ink Rally: Game state S, and the scenery along each stage (trees, crowds, chevron boards). */
+/* Ink Rally: Game state S, and the scenery along each stage (trees, hay bales, crowds, chevron boards). */
 "use strict";
 /* ============================================================
    STATE
@@ -25,7 +25,7 @@ function stageFor(def){ return stageCache[def.id]||(stageCache[def.id]=buildStag
 function sceneFor(st){ return sceneCache[st.def.id]||(sceneCache[st.def.id]=buildScenery(st)); }
 function clearOfRoad(st,x,y,gap){ let ok=true; near(st.grid,x,y,k=>{ const q=st.pts[k]; if(ok&&Math.hypot(q.x-x,q.y-y)<q.w/2+gap) ok=false; }); return ok; }
 function buildScenery(st){
-  const def=st.def, r=seeded(def.seed), P=st.pts, trees=[], crowd=[], signs=[], tapes=[];
+  const def=st.def, r=seeded(def.seed), P=st.pts, trees=[], crowd=[], signs=[], tapes=[], bales=[];
   const at=s=>P[clamp(Math.round(s/STEP),0,P.length-1)];
   // crowds stand on the outside of the hairpins and the tight caution bends, and at every jump
   const spots=st.notes.filter(n=>n.g<=2||n.caution).map(n=>({s:(n.s+n.end)/2,side:n.dir==='R'?-1:1}))
@@ -36,20 +36,25 @@ function buildScenery(st){
     for(let i=0;i<9;i++){ const q=at(sp.s-13+r()*26), d=d0+2+r()*4.5;
       const x=q.x+q.nx*sp.side*d, y=q.y+q.ny*sp.side*d; if(clearOfRoad(st,x,y,6)) crowd.push({x,y,ph:r()*TAU,face:Math.atan2(-q.ny*sp.side,-q.nx*sp.side),hop:0}); }
   });
-  // chevron boards on the outside of the tight bends, pointing the way the road goes
+  // hay bales line the outside of every bend that isn't nearly flat, to bounce you back onto the road
+  st.notes.filter(n=>n.g<=4).forEach(n=>{ const side=n.dir==='R'?-1:1;
+    for(let s=n.s-8;s<=n.end+12;s+=3.2){ const p=at(s), d=p.w/2+2.3, x=p.x+p.nx*side*d, y=p.y+p.ny*side*d;
+      if(clearOfRoad(st,x,y,1.4)&&!bales.some(b=>Math.hypot(b.x-x,b.y-y)<2.2)) bales.push({x,y,r:.85,a:r()*TAU,hit:0}); } });
+  // chevron boards stand behind the bales on the tight bends, pointing the way the road goes
   st.notes.filter(n=>n.g<=2).forEach(n=>{ const side=n.dir==='R'?-1:1;
-    [.3,.6].forEach(u=>{ const p=at(n.s+(n.end-n.s)*u), d=p.w/2+2.4; signs.push({x:p.x+p.nx*side*d,y:p.y+p.ny*side*d,a:p.a,dir:n.dir,z:0,vx:0,vy:0,vz:0,spin:0,hit:false}); }); });
+    [.3,.6].forEach(u=>{ const p=at(n.s+(n.end-n.s)*u), d=p.w/2+4.6; signs.push({x:p.x+p.nx*side*d,y:p.y+p.ny*side*d,a:p.a,dir:n.dir,z:0,vx:0,vy:0,vz:0,spin:0,hit:false}); }); });
   // trees: a close row along the road and a looser wood behind it
   const dens=def.trees==='pine'?.5:.3;
   for(let i=0;i<P.length;i+=2){ const p=P[i];
     for(const side of [-1,1]){
-      const bands=[[4,22,dens],[24,70,dens*.7]];
+      const bands=[[8,26,dens],[28,70,dens*.7]];
       for(const [a,b,pr] of bands){ if(r()>pr) continue;
         const tr=2.2+r()*2.8, d=p.w/2+a+r()*(b-a), x=p.x+p.nx*side*d+(r()-.5)*4, y=p.y+p.ny*side*d+(r()-.5)*4;
-        if(!clearOfRoad(st,x,y,2.5+tr*.6)) continue;
+        if(!clearOfRoad(st,x,y,7+tr*.5)) continue;
+        if(bales.some(b=>Math.hypot(b.x-x,b.y-y)<tr+2)) continue;
         if(crowd.some(c=>Math.hypot(c.x-x,c.y-y)<tr+3)) continue;
         trees.push({x,y,r:tr,ph:r()*TAU}); } } }
   signs.forEach(s=>s.home={x:s.x,y:s.y,a:s.a,z:0,vx:0,vy:0,vz:0,spin:0});
-  const sc={trees,crowd,signs,tapes,tgrid:gridOf(trees,20)};
+  const sc={trees,crowd,signs,tapes,bales,tgrid:gridOf(trees,20),bgrid:gridOf(bales,20)};
   return sc;
 }
