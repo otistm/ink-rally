@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.0
+- Steering is much more forgiving. The car grips harder and rarely spins its tail out, even when you yank the wheel.
+- If the tail does step out, the car straightens itself up for you.
+- Small thumb movements now make small turns. You need a bigger, deliberate slide to reach full lock.
+- Running wide onto the verge or grass slows you down less, so a mistake costs a little time instead of the whole run.
+
 ## 0.1.0
 - First playable version. Three stages: Pinewood (gravel), Chalk Hills (tarmac with crests and a gravel section) and Frostmere (snow).
 - One-thumb driving: hold anywhere to go, slide left or right to steer, pull down to brake. Arrow keys work on a computer.
