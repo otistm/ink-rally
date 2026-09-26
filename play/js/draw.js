@@ -1,0 +1,181 @@
+/* Ink Rally: Drawing the stage, scenery, dust, tyre marks and the car. */
+"use strict";
+/* ============================================================
+   DRAW
+   ============================================================ */
+let PX=1/7; // one screen pixel in metres, set each frame
+function roadPath(pts,a,b,off){ ctx.beginPath(); for(let i=a;i<=b;i++){ const p=pts[i], x=p.x+p.nx*off, y=p.y+p.ny*off; i===a?ctx.moveTo(x,y):ctx.lineTo(x,y); } }
+// which stretches of road are on screen, split wherever the surface changes
+function visibleRuns(st,R){
+  const P=st.pts, runs=[]; let a=-1, sf=null;
+  for(let i=0;i<P.length;i++){ const p=P[i], vis=Math.abs(p.x-cam.x)<R+8&&Math.abs(p.y-cam.y)<R+8;
+    if(vis&&a<0){ a=Math.max(0,i-1); sf=p.surf; }
+    else if(a>=0&&(!vis||p.surf!==sf)){ runs.push([a,i,sf]); if(vis){ a=i-1; sf=p.surf; } else a=-1; } }
+  if(a>=0) runs.push([a,P.length-1,sf]);
+  return runs;
+}
+function drawRoad(st,R){
+  const P=st.pts, runs=visibleRuns(st,R);
+  ctx.lineCap='round'; ctx.lineJoin='round';
+  runs.forEach(([a,b,sf])=>{ const w=WIDTH[sf]; roadPath(P,a,b,0); ctx.strokeStyle='#000'; ctx.lineWidth=w+3.6+INK*2*PX; ctx.stroke(); });
+  runs.forEach(([a,b,sf])=>{ const w=WIDTH[sf]; roadPath(P,a,b,0); ctx.strokeStyle='#fff'; ctx.lineWidth=w+3.6; ctx.stroke(); ctx.strokeStyle=sf==='snow'?PAT.bank:sf==='tarmac'?PAT.gravel:PAT.verge; ctx.stroke(); });
+  runs.forEach(([a,b,sf])=>{ const w=WIDTH[sf]; roadPath(P,a,b,0); ctx.strokeStyle='#000'; ctx.lineWidth=w+INK*2*PX; ctx.stroke(); });
+  runs.forEach(([a,b,sf])=>{ const w=WIDTH[sf]; roadPath(P,a,b,0); ctx.strokeStyle='#fff'; ctx.lineWidth=w; ctx.stroke(); ctx.strokeStyle=PAT[sf]; ctx.stroke(); });
+  // markings: a dashed centre line on tarmac, worn ruts on gravel and snow
+  ctx.save(); ctx.strokeStyle='#000';
+  runs.forEach(([a,b,sf])=>{
+    if(sf==='tarmac'){ ctx.globalAlpha=.8; ctx.lineWidth=.22; ctx.setLineDash([3,5]); roadPath(P,a,b,0); ctx.stroke(); ctx.setLineDash([]);
+      ctx.globalAlpha=.35; ctx.lineWidth=1.2*PX; roadPath(P,a,b,WIDTH[sf]/2-.5); ctx.stroke(); roadPath(P,a,b,-WIDTH[sf]/2+.5); ctx.stroke(); }
+    else { ctx.globalAlpha=sf==='snow'?.12:.08; ctx.lineWidth=1; [-1.6,1.6].forEach(o=>{ roadPath(P,a,b,o); ctx.stroke(); }); } });
+  ctx.restore();
+}
+function across(st,s,f){ const p=st.pts[clamp(Math.round(s/STEP),0,st.pts.length-1)]; ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.a); f(p.w/2,p); ctx.restore(); }
+function drawLines(st){
+  const check=hw=>{ ctx.fillStyle='#000'; for(let r=0;r<2;r++) for(let y=-hw,k=0;y<hw-.01;y+=1,k++) if((k+r)%2===0) ctx.fillRect(r-1,y,1,Math.min(1,hw-y)); ctx.lineWidth=1.5*PX; ctx.strokeStyle='#000'; ctx.strokeRect(-1,-hw,2,hw*2); };
+  across(st,st.start,check); across(st,st.finish,check);
+  st.splits.forEach(s=>across(st,s,hw=>{ ctx.strokeStyle='#000'; ctx.lineWidth=.3; ctx.setLineDash([.7,.7]); ctx.beginPath(); ctx.moveTo(0,-hw); ctx.lineTo(0,hw); ctx.stroke(); ctx.setLineDash([]); }));
+  st.marks.forEach(m=>across(st,m.s,hw=>{
+    if(m.k==='jump'){ ctx.beginPath(); ctx.rect(-3,-hw,3,hw*2); ctx.fillStyle='#fff'; ctx.fill(); ctx.fillStyle=PAT.bank; ctx.fill(); ctx.lineWidth=INK*PX; ctx.strokeStyle='#000'; ctx.stroke();
+      ctx.lineWidth=2.6*PX; ctx.beginPath(); ctx.moveTo(0,-hw); ctx.lineTo(0,hw); ctx.stroke(); }
+    else { ctx.strokeStyle='#000'; ctx.lineWidth=1.2*PX; ctx.globalAlpha=.4; for(let k=0;k<3;k++){ const x=-2.4+k*1.2; ctx.beginPath(); ctx.moveTo(x-.5,-hw); ctx.quadraticCurveTo(x+.6,0,x-.5,hw); ctx.stroke(); } ctx.globalAlpha=1; } }));
+}
+// banners over the start and finish, drawn above the car
+function drawBanners(st){
+  [[st.start,'Start'],[st.finish,'Finish']].forEach(([s,txt])=>{ const p=st.pts[Math.round(s/STEP)]; if(Math.hypot(p.x-cam.x,p.y-cam.y)>viewR()+10) return;
+    across(st,s,hw=>{ const e=hw+1.4;
+      ctx.fillStyle='rgba(0,0,0,.12)'; ctx.fillRect(-.45+.5,-e+.5,.9,e*2);
+      ctx.beginPath(); ctx.rect(-.45,-e,.9,e*2); ctx.fillStyle='#fff'; ctx.fill(); ctx.lineWidth=INK*PX; ctx.strokeStyle='#000'; ctx.stroke();
+      [-e,e].forEach(y=>{ ctx.beginPath(); ctx.arc(0,y,.55,0,TAU); ctx.fillStyle='#000'; ctx.fill(); });
+      ctx.save(); ctx.rotate(Math.PI/2); ctx.scale(PX,PX); ctx.fillStyle='#000'; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.font=`italic 900 ${Math.max(9,Math.round(.72/PX))}px Fraunces, Georgia, serif`; ctx.fillText(txt,0,.05/PX); ctx.restore(); }); });
+}
+function drawSkids(R){
+  const k=S.skid; if(!k||!k.n) return; const d=k.d;
+  ctx.save(); ctx.strokeStyle='#000'; ctx.lineCap='round'; ctx.lineWidth=.3;
+  [[.1,.2],[.2,.35],[.35,1]].forEach(([lo,hi])=>{ ctx.globalAlpha=(lo+Math.min(hi,.5))/2+.05; ctx.beginPath(); let any=false;
+    for(let i=0;i<k.n;i++){ const o=i*5, a=d[o+4]; if(a<lo||a>=hi) continue; if(Math.abs(d[o]-cam.x)>R||Math.abs(d[o+1]-cam.y)>R) continue;
+      ctx.moveTo(d[o],d[o+1]); ctx.lineTo(d[o+2],d[o+3]); any=true; }
+    if(any) ctx.stroke(); });
+  ctx.restore();
+}
+// dust clouds are merged like the course in Ink Nine: all the outlines first, then all the fills
+function drawDust(){
+  const D=S.parts.filter(p=>p.k==='dust'); if(!D.length) return;
+  const rad=p=>{ const u=p.t/p.life; return (p.r+p.g*Math.sqrt(u))*(u>.65?Math.max(0,1-(u-.65)/.35):1); };
+  ctx.fillStyle='#000'; ctx.beginPath(); D.forEach(p=>{ const r=rad(p)+INK*PX; ctx.moveTo(p.x+r,p.y); ctx.arc(p.x,p.y,r,0,TAU); }); ctx.fill();
+  ctx.fillStyle='#fff'; ctx.beginPath(); D.forEach(p=>{ const r=rad(p); ctx.moveTo(p.x+r,p.y); ctx.arc(p.x,p.y,r,0,TAU); }); ctx.fill();
+  ctx.save(); ctx.globalAlpha=.35; ctx.strokeStyle='#000'; ctx.lineWidth=1.1*PX; ctx.beginPath();
+  D.forEach(p=>{ const r=rad(p)*.6; if(r*cam.z<5) return; ctx.moveTo(p.x-r*.7+r,p.y+r*.1); ctx.arc(p.x-r*.7,p.y+r*.1,r,0,.9); }); ctx.stroke(); ctx.restore();
+}
+function drawBits(){
+  ctx.save(); ctx.strokeStyle='#000'; ctx.lineCap='round';
+  S.parts.forEach(p=>{ if(p.k==='dust') return; const u=p.t/p.life; ctx.globalAlpha=1-u*u; const s=1+p.z*.12;
+    ctx.save(); ctx.translate(p.x,p.y-p.z*.3); ctx.rotate(p.rot); ctx.scale(s,s);
+    if(p.k==='leaf'){ ctx.beginPath(); ctx.ellipse(0,0,.35,.18,0,0,TAU); ctx.fillStyle='#fff'; ctx.fill(); ctx.lineWidth=1.2*PX; ctx.stroke(); }
+    else if(p.k==='chip'){ ctx.fillStyle='#000'; ctx.fillRect(-.25,-.12,.5,.24); }
+    else { ctx.lineWidth=1.3*PX; ctx.beginPath(); ctx.moveTo(-.25,.15); ctx.lineTo(0,-.2); ctx.lineTo(.25,.15); ctx.stroke(); }
+    ctx.restore(); });
+  ctx.restore();
+}
+function shadowVec(){ const a=-cam.rot; return [Math.cos(a)*.35-Math.sin(a)*.32, Math.sin(a)*.35+Math.cos(a)*.32]; }
+function drawTrees(R,t){
+  const sc=S.scene, pine=S.def.trees==='pine', [sx,sy]=shadowVec();
+  const vis=sc.trees.filter(tr=>Math.abs(tr.x-cam.x)<R+tr.r&&Math.abs(tr.y-cam.y)<R+tr.r);
+  ctx.fillStyle='rgba(0,0,0,.09)'; ctx.beginPath(); vis.forEach(tr=>{ const r=tr.r; ctx.moveTo(tr.x+sx*r+r,tr.y+sy*r); ctx.ellipse(tr.x+sx*r,tr.y+sy*r,r,r*.92,0,0,TAU); }); ctx.fill();
+  vis.forEach(tr=>{ const wob=tr.hit?1+Math.sin(tr.hit*40)*tr.hit*.12:1, r=tr.r*wob, x=tr.x, y=tr.y;
+    ctx.beginPath();
+    if(pine){ const n=14; for(let k=0;k<=n*2;k++){ const a=k/(n*2)*TAU+tr.ph, rr=r*(k%2?.74:1); const px=x+Math.cos(a)*rr, py=y+Math.sin(a)*rr; k?ctx.lineTo(px,py):ctx.moveTo(px,py); } }
+    else { for(let k=0;k<=40;k++){ const a=k/40*TAU, rr=r*(1+.075*Math.sin(a*7+tr.ph)); const px=x+Math.cos(a)*rr, py=y+Math.sin(a)*rr; k?ctx.lineTo(px,py):ctx.moveTo(px,py); } }
+    ctx.closePath(); ctx.fillStyle='#fff'; ctx.fill(); ctx.lineWidth=INK*PX; ctx.strokeStyle='#000'; ctx.stroke();
+    ctx.lineWidth=1.3*PX; ctx.beginPath();
+    if(pine){ for(let k=0;k<7;k++){ const a=k/7*TAU+tr.ph*1.3; ctx.moveTo(x+Math.cos(a)*r*.15,y+Math.sin(a)*r*.15); ctx.lineTo(x+Math.cos(a)*r*.55,y+Math.sin(a)*r*.55); } }
+    else { const [lx,ly]=[x-r*.12,y-r*.12]; const a0=-cam.rot+.15*Math.PI; ctx.arc(lx,ly,r*.62,a0,a0+.47*Math.PI); }
+    ctx.stroke(); });
+}
+function drawTapes(){
+  ctx.save(); ctx.strokeStyle='#000'; ctx.lineWidth=1.4*PX; ctx.setLineDash([.9,.6]);
+  S.scene.tapes.forEach(tp=>{ if(Math.hypot(tp[0][0]-cam.x,tp[0][1]-cam.y)>viewR()+40) return; ctx.beginPath(); tp.forEach((q,i)=>i?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1])); ctx.stroke(); });
+  ctx.setLineDash([]); ctx.fillStyle='#000';
+  S.scene.tapes.forEach(tp=>{ if(Math.hypot(tp[0][0]-cam.x,tp[0][1]-cam.y)>viewR()+40) return; tp.forEach(q=>{ ctx.beginPath(); ctx.arc(q[0],q[1],.18,0,TAU); ctx.fill(); }); });
+  ctx.restore();
+}
+// spectators seen from above: shoulders and a head, waving and hopping as the car goes by
+function drawCrowd(R,t){
+  const c=S.car;
+  S.scene.crowd.forEach(p=>{ if(Math.abs(p.x-cam.x)>R||Math.abs(p.y-cam.y)>R) return;
+    const d=Math.hypot(p.x-c.x,p.y-c.y), ex=clamp(1-(d-8)/30,0,1), hop=ex*Math.abs(Math.sin(t*9+p.ph))*.18;
+    ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.face+Math.PI/2); ctx.scale(1+hop,1+hop);
+    ctx.fillStyle='rgba(0,0,0,.12)'; ctx.beginPath(); ctx.ellipse(.15+hop,.15+hop,.55,.3,0,0,TAU); ctx.fill();
+    ctx.strokeStyle='#000'; ctx.lineWidth=1.4*PX; ctx.lineCap='round';
+    if(ex>0){ const w=Math.sin(t*12+p.ph)*.5*ex; ctx.beginPath(); ctx.moveTo(-.45,0); ctx.lineTo(-.75-w*.3,-.55-ex*.2); ctx.moveTo(.45,0); ctx.lineTo(.75+w*.3,-.55-ex*.2); ctx.stroke(); }
+    ctx.beginPath(); ctx.ellipse(0,0,.52,.26,0,0,TAU); ctx.fillStyle='#fff'; ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.arc(0,0,.22,0,TAU); ctx.fillStyle='#000'; ctx.fill();
+    ctx.restore(); });
+}
+function drawSigns(R){
+  S.scene.signs.forEach(s=>{ if(Math.abs(s.x-cam.x)>R||Math.abs(s.y-cam.y)>R) return; const sc=1+s.z*.08, sg=s.dir==='R'?1:-1;
+    ctx.save(); ctx.translate(s.x,s.y); ctx.fillStyle='rgba(0,0,0,.12)'; const [sx,sy]=shadowVec(); ctx.beginPath(); ctx.ellipse(sx*(1+s.z),sy*(1+s.z),1.3,.5,s.a+Math.PI/2,0,TAU); ctx.fill();
+    ctx.rotate(s.a); ctx.scale(sc,sc);
+    ctx.beginPath(); ctx.rect(-.4,-1.2,.8,2.4); ctx.fillStyle='#fff'; ctx.fill(); ctx.lineWidth=INK*PX; ctx.strokeStyle='#000'; ctx.stroke();
+    ctx.lineWidth=.16; ctx.beginPath(); for(let k=-1;k<=1;k++){ const y=k*.7; ctx.moveTo(-.25,y-sg*.25); ctx.lineTo(.25*0,y+sg*.2); ctx.lineTo(.25,y-sg*.25); } ctx.stroke();
+    ctx.restore(); });
+}
+function drawCar(){
+  const c=S.car, [sx,sy]=shadowVec(), h=c.z, lift=1+h*.06;
+  // shadow stays on the ground; it slides further away the higher the car flies
+  ctx.save(); ctx.translate(c.x+sx*(1.2+h*2.2),c.y+sy*(1.2+h*2.2)); ctx.rotate(c.a); ctx.fillStyle=`rgba(0,0,0,${Math.max(.08,.2-h*.03)})`;
+  ctx.beginPath(); ctx.roundRect?ctx.roundRect(-2.1,-.95,4.2,1.9,.55):ctx.rect(-2.1,-.95,4.2,1.9); ctx.fill(); ctx.restore();
+  ctx.save(); ctx.translate(c.x,c.y); ctx.rotate(c.a); ctx.scale(lift*(1-S.sq*.22),lift*(1+S.sq*.4));
+  const ink=INK*PX, steerA=c.steer*.5;
+  // wheels, the front two turned with the steering
+  ctx.fillStyle='#000';
+  [[1.3,-1],[1.3,1],[-1.3,-1],[-1.3,1]].forEach(([x,y],i)=>{ ctx.save(); ctx.translate(x,y); if(i<2) ctx.rotate(steerA); ctx.beginPath(); ctx.roundRect?ctx.roundRect(-.4,-.2,.8,.4,.1):ctx.rect(-.4,-.2,.8,.4); ctx.fill(); ctx.restore(); });
+  // body
+  ctx.beginPath(); ctx.roundRect?ctx.roundRect(-2.1,-.95,4.2,1.9,[.45,.7,.7,.45]):ctx.rect(-2.1,-.95,4.2,1.9); ctx.fillStyle='#fff'; ctx.fill(); ctx.lineWidth=ink; ctx.strokeStyle='#000'; ctx.stroke();
+  // bonnet stripes and rear wing
+  ctx.lineWidth=.12; ctx.beginPath(); ctx.moveTo(.9,-.18); ctx.lineTo(2.02,-.18); ctx.moveTo(.9,.18); ctx.lineTo(2.02,.18); ctx.moveTo(-1.4,-.18); ctx.lineTo(-2.02,-.18); ctx.moveTo(-1.4,.18); ctx.lineTo(-2.02,.18); ctx.stroke();
+  ctx.fillStyle='#000'; ctx.fillRect(-2.25,-.95,.28,1.9);
+  // headlights
+  ctx.lineWidth=1.2*PX; [-.62,.62].forEach(y=>{ ctx.beginPath(); ctx.arc(1.85,y,.17,0,TAU); ctx.fillStyle='#fff'; ctx.fill(); ctx.stroke(); });
+  // cabin leans with the body roll
+  ctx.save(); ctx.translate(0,c.roll*.35);
+  ctx.fillStyle='#000'; ctx.beginPath(); ctx.moveTo(.55,-.74); ctx.lineTo(1.05,-.66); ctx.quadraticCurveTo(1.12,0,1.05,.66); ctx.lineTo(.55,.74); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(-.95,-.72); ctx.lineTo(-1.3,-.64); ctx.quadraticCurveTo(-1.36,0,-1.3,.64); ctx.lineTo(-.95,.72); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.roundRect?ctx.roundRect(-.95,-.74,1.5,1.48,.2):ctx.rect(-.95,-.74,1.5,1.48); ctx.fillStyle='#fff'; ctx.fill(); ctx.lineWidth=ink*.8; ctx.stroke();
+  ctx.beginPath(); ctx.arc(-.2,0,.45,0,TAU); ctx.fillStyle='#fff'; ctx.fill(); ctx.lineWidth=1.3*PX; ctx.stroke();
+  ctx.save(); ctx.translate(-.2,0); ctx.rotate(Math.PI/2); ctx.scale(PX,PX); ctx.fillStyle='#000'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.font=`900 ${Math.max(6,Math.round(.62/PX))}px Fraunces, Georgia, serif`; ctx.fillText('9',0,.04/PX); ctx.restore();
+  ctx.restore();
+  ctx.restore();
+}
+// the thumb's steering wheel: a ring where your thumb landed and a knob that follows it
+function drawStick(){
+  const p=IN.ptr; if(!p) return; const dx=clamp(p.x-p.x0,-STEER_PX-10,STEER_PX+10), dy=clamp(p.y-p.y0,-12,BRAKE_PX+BRAKE_RANGE);
+  ctx.save(); ctx.strokeStyle='#000'; ctx.lineCap='round';
+  ctx.globalAlpha=.25; ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(p.x0-STEER_PX,p.y0); ctx.lineTo(p.x0+STEER_PX,p.y0); ctx.stroke();
+  ctx.setLineDash([3,5]); ctx.beginPath(); ctx.moveTo(p.x0,p.y0+BRAKE_PX); ctx.lineTo(p.x0,p.y0+BRAKE_PX+BRAKE_RANGE); ctx.stroke(); ctx.setLineDash([]);
+  ctx.globalAlpha=.6; ctx.font='800 11px Figtree, system-ui, sans-serif'; ctx.fillStyle='#000'; ctx.textAlign='center'; ctx.fillText('brake',p.x0,p.y0+BRAKE_PX+BRAKE_RANGE+14);
+  ctx.globalAlpha=1; ctx.lineWidth=2.5; const br=IN.brake>.08;
+  ctx.beginPath(); ctx.arc(p.x0+dx,p.y0+dy,17,0,TAU); ctx.fillStyle=br?'#000':'#fff'; ctx.fill(); ctx.stroke();
+  if(!br){ ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(p.x0+dx-5,p.y0+dy+2); ctx.lineTo(p.x0+dx,p.y0+dy-4); ctx.lineTo(p.x0+dx+5,p.y0+dy+2); ctx.stroke(); }
+  ctx.restore();
+}
+// speed lines at the screen edges when you're flying
+function drawSpeed(t){
+  const v=Math.abs(S.car.vf); if(v<30||RM) return; const k=(v-30)/14;
+  ctx.save(); ctx.strokeStyle='#000'; ctx.lineCap='round'; ctx.lineWidth=1.5;
+  for(let i=0;i<10;i++){ const side=i%2?1:-1, x=side<0?8+((i*37)%40):W-8-((i*29)%40), y=((i*173+t*900)%(Hh+200))-100, l=40+k*50;
+    ctx.globalAlpha=.25*k; ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x,y+l); ctx.stroke(); }
+  ctx.restore();
+}
+function draw(t){
+  const st=S.stage;
+  screenTransform(); ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,Hh);
+  if(!st) return;
+  PX=1/cam.z; const R=viewR();
+  worldTransform();
+  ctx.fillStyle=S.def.surface==='snow'?PAT.field:PAT.grass; ctx.fillRect(cam.x-R,cam.y-R,R*2,R*2);
+  drawRoad(st,R); drawLines(st); drawSkids(R); drawTapes();
+  drawDust(); drawBits(); drawSigns(R); drawCar(); drawCrowd(R,t); drawTrees(R,t); drawBanners(st);
+  screenTransform(); drawSpeed(t); drawStick();
+}

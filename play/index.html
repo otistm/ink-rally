@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Ink Rally</title>
+<meta name="description" content="Drive fast. Stay on the road. Get trophies.">
+<meta name="theme-color" content="#ffffff">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" type="image/svg+xml" href="/icons/icon.svg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Ink Rally">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,800;1,9..144,900&family=Figtree:wght@500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<canvas id="c" aria-label="Rally stage"></canvas>
+
+<header id="top" hidden>
+  <div>
+    <div class="hn" id="hn">Pinewood</div>
+    <div class="sub" id="hsub">Gravel</div>
+  </div>
+  <div class="pts"><div class="pv" id="clock">0:00.0</div><div class="sub" id="best">No best yet</div></div>
+  <div id="prog" aria-hidden="true"><i class="tk" id="tk1"></i><i class="tk" id="tk2"></i><b id="pdot"></b></div>
+</header>
+
+<div id="note" hidden role="status" aria-live="polite">
+  <svg id="noteArrow" viewBox="0 0 44 44" aria-hidden="true"><path id="noteArrowPath" d="" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  <div><b id="noteT">Left 3</b><small id="noteN"></small></div>
+</div>
+
+<div id="speedo" hidden><b id="kmh">0</b><small>km/h</small></div>
+<button id="pause" type="button" aria-label="Pause" hidden>
+  <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="9" y="8" width="5" height="16" rx="1.5" fill="currentColor"/><rect x="18" y="8" width="5" height="16" rx="1.5" fill="currentColor"/></svg>
+</button>
+<button id="rescue" type="button" hidden>Back on the road</button>
+<div id="hint" hidden><span id="hintT">Hold anywhere to go</span></div>
+
+<div id="callout"></div>
+<div id="card" hidden><div class="panel" id="panel"></div></div>
+<script src="js/config.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/stages.js"></script>
+<script src="js/render.js"></script>
+<script src="js/world.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/screens.js"></script>
+<script src="js/flow.js"></script>
+<script src="js/physics.js"></script>
+<script src="js/input.js"></script>
+<script src="js/draw.js"></script>
+<script src="js/main.js"></script>
+<script>if('serviceWorker' in navigator&&location.protocol==='https:') navigator.serviceWorker.register('/sw.js').catch(()=>{});</script>
+</body>
+</html>
