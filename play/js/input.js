@@ -4,13 +4,14 @@
 /* ============================================================
    INPUT
    ============================================================ */
-const STEER_PX=64, BRAKE_PX=22, BRAKE_RANGE=50;
+const STEER_PX=80, BRAKE_PX=22, BRAKE_RANGE=50;
 const IN={down:false,gas:false,brake:0,steer:0,ptr:null,keys:{},
   reset(){ this.ptr=null; this.keys={}; this.down=false; this.gas=false; this.brake=0; this.steer=0; }};
 function inputUpdate(){
   const k=IN.keys, p=IN.ptr;
   if(p){ const dx=p.x-p.x0, dy=p.y-p.y0;
-    IN.steer=clamp((Math.abs(dx)<5?0:dx-Math.sign(dx)*5)/STEER_PX,-1,1);
+    // small thumb movements make small turns; full lock needs a deliberate slide
+    const u=clamp((Math.abs(dx)<6?0:dx-Math.sign(dx)*6)/STEER_PX,-1,1); IN.steer=Math.sign(u)*Math.pow(Math.abs(u),1.5);
     IN.brake=clamp((dy-BRAKE_PX)/BRAKE_RANGE,0,1);
     IN.gas=IN.brake<.08; IN.down=true; }
   else if(k.ArrowUp||k.ArrowDown||k.ArrowLeft||k.ArrowRight||k.w||k.s||k.a||k.d){

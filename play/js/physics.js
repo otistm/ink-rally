@@ -17,11 +17,13 @@ function carStep(dt){
   c.surf=surfaceUnder(c,st);
   const sf=SURF[c.surf], air=c.z>.02;
   const gas=driving&&IN.gas, brk=driving?IN.brake:S.st==='finish'?.55:0;
-  c.steer+=((driving||S.st==='finish'?IN.steer:0)-c.steer)*Math.min(1,dt*9);
+  c.steer+=((driving||S.st==='finish'?IN.steer:0)-c.steer)*Math.min(1,dt*6);
   let f0=Math.cos(c.a),f1=Math.sin(c.a), vf=c.vx*f0+c.vy*f1;
   const sp=Math.abs(vf), delta=c.steer*.6/(1+sp*.06);
   if(!air){
     let wT=vf*Math.tan(delta)/CAR.wheelbase; const wMax=sf.grip*sf.rot/Math.max(3,sp); wT=clamp(wT,-wMax,wMax);
+    // a helping hand: when the tail steps out, the car gently turns its nose back the way it's travelling
+    if(vf>3){ const vl0=c.vx*-f1+c.vy*f0; wT+=clamp(Math.atan2(vl0,vf)*2.8,-1.2,1.2); }
     c.w+=(wT-c.w)*Math.min(1,dt*7);
   }
   c.a+=c.w*dt;
@@ -34,7 +36,7 @@ function carStep(dt){
     if(brk>0){ if(vf>.3) vf=Math.max(0,vf-CAR.brake*sf.trac*brk*dt); else if(driving&&!gas) vf=Math.max(-CAR.reverse,vf-4*brk*dt); }
     const drag=((.5+sf.drag)*dt+.00035*vf*vf*dt)*Math.sign(vf); vf=Math.abs(drag)>=Math.abs(vf)?(gas?vf:0):vf-drag;
     // the rear lets go more easily under braking, and a little when you floor it on loose ground
-    const rear=sf.grip*(brk>.3?.72:1)*(gas&&sf.loose?.92:1), dl=rear*dt;
+    const rear=sf.grip*(brk>.3?.9:1)*(gas&&sf.loose?.97:1), dl=rear*dt;
     c.slip=Math.abs(vl);
     vl=Math.abs(vl)<=dl?0:vl-Math.sign(vl)*dl;
   } else { vf-=.00035*vf*Math.abs(vf)*dt; c.slip=0; }

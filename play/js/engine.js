@@ -12,14 +12,14 @@ function angDiff(a,b){ let d=(b-a)%TAU; if(d>Math.PI) d-=TAU; if(d<-Math.PI) d+=
 const CAR={len:4.2,wid:1.9,wheelbase:2.6,accel:11,vmax:44,brake:16,reverse:6};
 
 // grip: sideways grip in m/s² (more = corners faster before sliding)
-// rot: how far past the grip the nose can turn, so you can throw the car into a slide
+// rot: how far past the grip the nose can turn (above 1 lets the tail step out; kept gentle for casual play)
 // trac: how much of the engine and brakes reach the ground; top: share of top speed; drag: extra rolling drag
 const SURF={
-  tarmac:{grip:13, rot:1.08,trac:1,  top:1,  drag:0,  loose:false,name:'Tarmac'},
-  gravel:{grip:9,  rot:1.2, trac:.82,top:.94,drag:.3, loose:true, name:'Gravel'},
-  snow:  {grip:6.5,rot:1.25,trac:.7, top:.88,drag:.4, loose:true, name:'Snow'},
-  verge: {grip:7.5,rot:1.15,trac:.7, top:.8, drag:1.5,loose:true, name:'Verge'},
-  grass: {grip:5,  rot:1.1, trac:.5, top:.45,drag:5,  loose:true, name:'Grass'}
+  tarmac:{grip:13, rot:1,   trac:1,  top:1,  drag:0,  loose:false,name:'Tarmac'},
+  gravel:{grip:9,  rot:1.04,trac:.82,top:.94,drag:.3, loose:true, name:'Gravel'},
+  snow:  {grip:6.5,rot:1.06,trac:.7, top:.88,drag:.4, loose:true, name:'Snow'},
+  verge: {grip:7.5,rot:1,   trac:.8, top:.85,drag:.8, loose:true, name:'Verge'},
+  grass: {grip:6,  rot:1,   trac:.6, top:.55,drag:3,  loose:true, name:'Grass'}
 };
 // Pacenote grades: 1 is a hairpin-tight bend, 6 is nearly flat out. Radius of each grade in metres.
 const RAD={1:11,2:18,3:28,4:42,5:65,6:100};
