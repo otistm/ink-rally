@@ -41,8 +41,6 @@ function sfx(k,p=1){
   else if(k==='bump'){ tone(110,.12,'sine',.25*p,60); noise(.1,.2*p,900,.8); }
   else if(k==='charge'){ tone(p>1?1100:760,.09,'triangle',.12); }
   else if(k==='boost'){ noise(.5,.35*p,1800,.6); tone(220,.45,'sawtooth',.08*p,660); }
-  else if(k==='coin'){ tone(1320*Math.pow(1.06,p),.07,'sine',.09); setTimeout(()=>tone(1760*Math.pow(1.06,p),.09,'sine',.07),45); }
-  else if(k==='bigcoin'){ [1047,1319,1568,2093].forEach((f,i)=>setTimeout(()=>tone(f,.12,'triangle',.1),i*50)); }
   else if(k==='achieve'){ [784,988,1175,1568].forEach((f,i)=>setTimeout(()=>tone(f,.22,'triangle',.13),i*90)); }
   else if(k==='buy'){ tone(660,.08,'square',.07); setTimeout(()=>tone(990,.16,'triangle',.12),70); }
   else if(k==='nope'){ tone(180,.15,'square',.06,120); }
