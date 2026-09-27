@@ -1,4 +1,4 @@
-/* Ink Rally: Game state S, and the scenery along each stage (trees, hay bales, crowds, chevron boards). */
+/* Ink Rally: Game state S, and the scenery along each stage (coins, trees, hay bales, crowds, chevron boards). */
 "use strict";
 /* ============================================================
    STATE
@@ -24,6 +24,23 @@ const sceneCache={}, stageCache={};
 function stageFor(def){ return stageCache[def.id]||(stageCache[def.id]=buildStage(def)); }
 function sceneFor(st){ return sceneCache[st.def.id]||(sceneCache[st.def.id]=buildScenery(st)); }
 function clearOfRoad(st,x,y,gap){ let ok=true; near(st.grid,x,y,k=>{ const q=st.pts[k]; if(ok&&Math.hypot(q.x-x,q.y-y)<q.w/2+gap) ok=false; }); return ok; }
+/* Coins trace the fun way through each stage: a line through the inside of every bend (the racing line),
+   a weaving line down the straights, a row up to each jump and an arc through the air over it with a big coin at the top. */
+function placeCoins(st,r,at){
+  const coins=[], put=(s,lat,z,big)=>{ const p=at(s); coins.push({x:p.x+p.nx*lat,y:p.y+p.ny*lat,z:z||0,big:!!big,ph:r()*TAU,got:false,gotT:0}); };
+  const items=st.notes.map(n=>({s:n.s,end:n.end,n})).concat(st.marks.map(m=>({s:m.s-20,end:m.k==='jump'?m.s+48:m.s+10,m}))).sort((a,b)=>a.s-b.s);
+  st.notes.forEach(n=>{ if(n.g>4) return; const side=n.dir==='R'?1:-1, len=n.end-n.s, cnt=clamp(Math.round(len/7),4,9);
+    for(let i=0;i<cnt;i++){ const u=i/(cnt-1), s=n.s+len*u, w=at(s).w; put(s,side*(w/2-1.8)*Math.sin(u*Math.PI)); } });
+  st.marks.forEach(m=>{
+    for(const d of [-18,-12,-6]) put(m.s+d,0);
+    if(m.k==='jump') for(let i=0;i<7;i++){ const u=(i+1)/8; put(m.s+2+u*44,0,.8+4*2.4*u*(1-u),i===3); }
+    else for(const d of [6,12]) put(m.s+d,0); });
+  let prev=st.start+20;
+  items.forEach(it=>{ const gap=it.s-prev;
+    if(gap>=60){ const n=6, s0=prev+gap/2-15, ph=r()*TAU, sw=r()<.5?-1:1; for(let i=0;i<n;i++){ const s=s0+i*6; put(s,sw*Math.sin(ph+i*.6)*at(s).w*.28); } }
+    prev=Math.max(prev,it.end); });
+  return coins;
+}
 function buildScenery(st){
   const def=st.def, r=seeded(def.seed), P=st.pts, trees=[], crowd=[], signs=[], tapes=[], bales=[];
   const at=s=>P[clamp(Math.round(s/STEP),0,P.length-1)];
@@ -55,6 +72,7 @@ function buildScenery(st){
         if(crowd.some(c=>Math.hypot(c.x-x,c.y-y)<tr+3)) continue;
         trees.push({x,y,r:tr,ph:r()*TAU}); } } }
   signs.forEach(s=>s.home={x:s.x,y:s.y,a:s.a,z:0,vx:0,vy:0,vz:0,spin:0});
-  const sc={trees,crowd,signs,tapes,bales,tgrid:gridOf(trees,20),bgrid:gridOf(bales,20)};
+  const coins=placeCoins(st,r,at);
+  const sc={trees,crowd,signs,tapes,bales,coins,tgrid:gridOf(trees,20),bgrid:gridOf(bales,20),cgrid:gridOf(coins,20)};
   return sc;
 }

@@ -126,32 +126,75 @@ function drawSigns(R){
     ctx.restore(); });
 }
 function drawCar(){
-  const c=S.car, [sx,sy]=shadowVec(), h=c.z, big=CARDRAW, lift=(1+h*.06)*big;
+  const c=S.car, [sx,sy]=shadowVec(), h=c.z, big=CARDRAW, lift=(1+h*.06)*big, def=carDef(GARAGE.car), sh=def.shape, cs=GARAGE.cars[GARAGE.car];
   // shadow stays on the ground; it slides further away the higher the car flies
   ctx.save(); ctx.translate(c.rx+sx*(1.2+h*2.2),c.ry+sy*(1.2+h*2.2)); ctx.rotate(c.ra); ctx.scale(big,big); ctx.fillStyle=`rgba(0,0,0,${Math.max(.08,.2-h*.03)})`;
-  ctx.beginPath(); ctx.roundRect?ctx.roundRect(-2.1,-.95,4.2,1.9,.55):ctx.rect(-2.1,-.95,4.2,1.9); ctx.fill(); ctx.restore();
-  ctx.save(); ctx.translate(c.rx,c.ry); ctx.rotate(c.ra); ctx.scale(lift*(1-S.sq*.22),lift*(1+S.sq*.4));
-  const ink=INK*PX, steerA=c.steer*.5;
-  // wheels, the front two turned with the steering
-  ctx.fillStyle='#000';
-  [[1.3,-1],[1.3,1],[-1.3,-1],[-1.3,1]].forEach(([x,y],i)=>{ ctx.save(); ctx.translate(x,y); if(i<2) ctx.rotate(steerA); ctx.beginPath(); ctx.roundRect?ctx.roundRect(-.4,-.2,.8,.4,.1):ctx.rect(-.4,-.2,.8,.4); ctx.fill(); ctx.restore(); });
-  // body
-  ctx.beginPath(); ctx.roundRect?ctx.roundRect(-2.1,-.95,4.2,1.9,[.45,.7,.7,.45]):ctx.rect(-2.1,-.95,4.2,1.9); ctx.fillStyle='#fff'; ctx.fill(); ctx.lineWidth=ink; ctx.strokeStyle='#000'; ctx.stroke();
-  // bonnet stripes and rear wing
-  ctx.lineWidth=.12; ctx.beginPath(); ctx.moveTo(.9,-.18); ctx.lineTo(2.02,-.18); ctx.moveTo(.9,.18); ctx.lineTo(2.02,.18); ctx.moveTo(-1.4,-.18); ctx.lineTo(-2.02,-.18); ctx.moveTo(-1.4,.18); ctx.lineTo(-2.02,.18); ctx.stroke();
-  ctx.fillStyle='#000'; ctx.fillRect(-2.25,-.95,.28,1.9);
+  ctx.beginPath(); ctx.roundRect?ctx.roundRect(-sh.len/2,-sh.wid/2-.1,sh.len,sh.wid+.2,.55):ctx.rect(-sh.len/2,-sh.wid/2,sh.len,sh.wid); ctx.fill(); ctx.restore();
+  ctx.save(); ctx.translate(c.rx,c.ry); ctx.rotate(c.ra); const kx=lift*(1-S.sq*.22), ky=lift*(1+S.sq*.4); ctx.scale(kx,ky);
+  drawCarShape(ctx,def,cs.livery,cs.number,{px:PX/Math.min(kx,ky),steer:c.steer*.5,roll:c.roll*.35});
+  ctx.restore();
+}
+/* Every car, in the game and in the garage, is drawn here: top-down, nose along +x, in metres.
+   o.px is one screen pixel in these units, so ink lines stay the same weight at any size. */
+function rr(g,x,y,w,h,r){ g.beginPath(); if(g.roundRect) g.roundRect(x,y,w,h,r); else g.rect(x,y,w,h); }
+function drawCarShape(g,def,livery,number,o){
+  const sh=def.shape, L=sh.len/2, Wd=sh.wid/2, px=o.px, ink=INK*px, wk=sh.wheel||1, night=livery==='night';
+  const body=()=>{ const r=sh.corner; rr(g,-L,-Wd,sh.len,sh.wid,[r*.7,r,r,r*.7]); };
+  g.save(); g.lineJoin='round'; g.lineCap='round';
+  // wheels, the front two turned with the steering; a buggy's sit out beside the body
+  const wy=sh.wheelsOut?Wd+.3:Wd-.02, wx=L*.64;
+  g.fillStyle='#000';
+  [[wx,-wy],[wx,wy],[-wx,-wy],[-wx,wy]].forEach(([x,y],i)=>{ g.save(); g.translate(x,y); if(i<2) g.rotate(o.steer||0); rr(g,-.42*wk,-.21*wk,.84*wk,.42*wk,.1); g.fill(); g.restore(); });
+  if(sh.wheelsOut){ g.lineWidth=.14; g.strokeStyle='#000'; g.beginPath(); g.moveTo(wx,-wy); g.lineTo(wx,wy); g.moveTo(-wx,-wy); g.lineTo(-wx,wy); g.stroke(); }
+  if(sh.spare){ g.beginPath(); g.arc(-L-.28,0,.5,0,TAU); g.fillStyle='#000'; g.fill(); g.beginPath(); g.arc(-L-.28,0,.2,0,TAU); g.fillStyle='#fff'; g.fill(); }
+  // body and its paint
+  body(); g.fillStyle=night?'#000':'#fff'; g.fill();
+  g.save(); body(); g.clip(); paintLivery(g,livery,sh,px); g.restore();
+  body(); g.lineWidth=ink; g.strokeStyle='#000'; g.stroke();
+  if(sh.scoop){ g.fillStyle=night?'#fff':'#000'; rr(g,sh.screen+.55,-.22,.6,.44,.1); g.fill(); }
+  // rear wing
+  if(sh.wing==='lip'){ g.fillStyle='#000'; g.fillRect(-L-.15,-Wd,.26,sh.wid); }
+  if(sh.wing==='big'){ g.fillStyle='#000'; g.fillRect(-L-.35,-Wd-.18,.34,sh.wid+.36); g.fillRect(-L-.35,-Wd-.18,.8,.14); g.fillRect(-L-.35,Wd+.04,.8,.14); }
   // headlights
-  ctx.lineWidth=1.2*PX; [-.62,.62].forEach(y=>{ ctx.beginPath(); ctx.arc(1.85,y,.17,0,TAU); ctx.fillStyle='#fff'; ctx.fill(); ctx.stroke(); });
+  g.lineWidth=1.2*px; g.strokeStyle='#000'; [-Wd*.66,Wd*.66].forEach(y=>{ g.beginPath(); g.arc(L-.25,y,.16,0,TAU); g.fillStyle='#fff'; g.fill(); g.stroke(); });
   // cabin leans with the body roll
-  ctx.save(); ctx.translate(0,c.roll*.35);
-  ctx.fillStyle='#000'; ctx.beginPath(); ctx.moveTo(.55,-.74); ctx.lineTo(1.05,-.66); ctx.quadraticCurveTo(1.12,0,1.05,.66); ctx.lineTo(.55,.74); ctx.closePath(); ctx.fill();
-  ctx.beginPath(); ctx.moveTo(-.95,-.72); ctx.lineTo(-1.3,-.64); ctx.quadraticCurveTo(-1.36,0,-1.3,.64); ctx.lineTo(-.95,.72); ctx.closePath(); ctx.fill();
-  ctx.beginPath(); ctx.roundRect?ctx.roundRect(-.95,-.74,1.5,1.48,.2):ctx.rect(-.95,-.74,1.5,1.48); ctx.fillStyle='#fff'; ctx.fill(); ctx.lineWidth=ink*.8; ctx.stroke();
-  ctx.beginPath(); ctx.arc(-.2,0,.45,0,TAU); ctx.fillStyle='#fff'; ctx.fill(); ctx.lineWidth=1.3*PX; ctx.stroke();
-  ctx.save(); ctx.translate(-.2,0); ctx.rotate(Math.PI/2); ctx.scale(PX,PX); ctx.fillStyle='#000'; ctx.textAlign='center'; ctx.textBaseline='middle';
-  ctx.font=`900 ${Math.max(6,Math.round(.62/PX))}px Fraunces, Georgia, serif`; ctx.fillText('9',0,.04/PX); ctx.restore();
-  ctx.restore();
-  ctx.restore();
+  g.save(); g.translate(0,o.roll||0);
+  const [c0,c1]=sh.cabin, cw=Wd-.2;
+  if(sh.cage){
+    g.fillStyle='#000'; [-.38,.38].forEach(y=>{ rr(g,c0+.15,y-.26,.7,.52,.12); g.fill(); });
+    g.strokeStyle=night?'#fff':'#000'; g.lineWidth=.13; g.beginPath(); g.rect(c0,-cw,c1-c0,cw*2); g.moveTo(c0,-cw); g.lineTo(c1,cw); g.moveTo(c0,cw); g.lineTo(c1,-cw); g.stroke();
+  } else {
+    g.fillStyle='#000'; g.beginPath(); g.moveTo(c1,-cw); g.lineTo(sh.screen,-cw+.08); g.quadraticCurveTo(sh.screen+.07,0,sh.screen,cw-.08); g.lineTo(c1,cw); g.closePath(); g.fill();
+    g.beginPath(); g.moveTo(c0,-cw+.02); g.lineTo(sh.rear,-cw+.1); g.quadraticCurveTo(sh.rear-.06,0,sh.rear,cw-.1); g.lineTo(c0,cw-.02); g.closePath(); g.fill();
+    rr(g,c0,-cw,c1-c0,cw*2,.2); g.fillStyle=night?'#000':'#fff'; g.fill(); g.lineWidth=ink*.8; g.strokeStyle=night?'#fff':'#000'; g.stroke();
+    if(sh.rack){ g.lineWidth=1.3*px; g.beginPath(); for(let x=c0+.25;x<c1-.1;x+=.32){ g.moveTo(x,-cw+.12); g.lineTo(x,cw-.12); } g.stroke(); }
+  }
+  // race number on the roof (on a buggy, on the nose)
+  const nx=sh.cage?L-.95:(sh.rack?c0+.05:(c0+c1)/2), nr=sh.cage?.34:sh.rack?.3:.42;
+  g.beginPath(); g.arc(nx,0,nr,0,TAU); g.fillStyle='#fff'; g.fill(); g.lineWidth=1.3*px; g.strokeStyle='#000'; g.stroke();
+  g.save(); g.translate(nx,0); g.rotate(Math.PI/2); g.scale(px,px); g.fillStyle='#000'; g.textAlign='center'; g.textBaseline='middle';
+  g.font=`900 ${Math.max(5,Math.round((number>9?.46:.6)*(nr/.42)/px))}px Fraunces, Georgia, serif`; g.fillText(String(number),0,.04/px); g.restore();
+  g.restore();
+  g.restore();
+}
+// ink liveries, clipped to the body; in the car's own metres
+function paintLivery(g,id,sh,px){
+  const L=sh.len/2, Wd=sh.wid/2; g.fillStyle='#000'; g.strokeStyle='#000';
+  if(id==='stripes'){ g.lineWidth=.13; g.beginPath(); [-.18,.18].forEach(y=>{ g.moveTo(-L,y); g.lineTo(L,y); }); g.stroke(); }
+  else if(id==='band'){ g.fillRect(-L,-.05,sh.len,.42); g.fillStyle='#fff'; g.fillRect(-L,.42,sh.len,.08); }
+  else if(id==='checks'){ const q=.32; for(let x=L-q*4;x<L;x+=q) for(let y=-Wd,k=0;y<Wd;y+=q,k++) if((Math.round((x-L)/q)+k)%2===0) g.fillRect(x,y,q,q); }
+  else if(id==='hatch'){ g.lineWidth=1.2*px; g.globalAlpha=.8; g.beginPath(); for(let x=-L-Wd*2;x<L;x+=.24){ g.moveTo(x,Wd); g.lineTo(x+Wd*2,-Wd); } g.stroke(); g.globalAlpha=1; }
+  else if(id==='dots'){ for(let x=-L+.2,i=0;x<L;x+=.42,i++) for(let y=-Wd+.1+(i%2)*.21;y<Wd;y+=.42){ g.beginPath(); g.arc(x,y,.1,0,TAU); g.fill(); } }
+  else if(id==='flames'){ [-1,1].forEach(s=>{ g.beginPath(); g.moveTo(L,s*Wd*.2); for(let k=0;k<3;k++){ const tip=L-1.3-k*.55; g.quadraticCurveTo(tip+.5,s*(Wd*.3+k*.2),tip,s*(Wd*.5+k*.18)); g.quadraticCurveTo(tip+.6,s*(Wd*.55+k*.18),tip+.35,s*(Wd*.7+k*.12)); }
+    g.lineTo(L,s*Wd); g.closePath(); g.fill(); }); }
+  else if(id==='doodle'){ g.lineWidth=1.3*px; const r=seeded(3); for(let k=0;k<9;k++){ const x=-L+.3+r()*(sh.len-.6), y=-Wd+.2+r()*(sh.wid-.4), s=.12+r()*.1; g.beginPath();
+      if(k%3===0){ for(let a=0;a<TAU*1.6;a+=.4){ const rr=s*a/TAU; a?g.lineTo(x+Math.cos(a)*rr,y+Math.sin(a)*rr):g.moveTo(x,y); } }
+      else if(k%3===1){ for(let a=0;a<5;a++){ const t=a/5*TAU; g.moveTo(x,y); g.lineTo(x+Math.cos(t)*s,y+Math.sin(t)*s); } }
+      else { g.moveTo(x-s,y); g.quadraticCurveTo(x,y-s*1.5,x+s,y); } g.stroke(); } }
+  else if(id==='pin'){ g.lineWidth=1*px; g.beginPath(); [-1,1].forEach(s=>{ const y=s*(Wd-.22); g.moveTo(L-.3,y); g.lineTo(-L+.7,y); g.bezierCurveTo(-L+.3,y,-L+.35,y-s*.3,-L+.6,y-s*.3); g.moveTo(L-.3,y-s*.1); g.lineTo(-L+.8,y-s*.1); }); g.stroke(); }
+  else if(id==='camo'){ const r=seeded(8); for(let k=0;k<11;k++){ const x=-L+r()*sh.len, y=-Wd+r()*sh.wid, s=.18+r()*.22; g.beginPath(); for(let a=0;a<=12;a++){ const t=a/12*TAU, q=s*(1+.35*Math.sin(t*3+k)); a?g.lineTo(x+Math.cos(t)*q*1.4,y+Math.sin(t)*q):g.moveTo(x+q*1.4,y); } g.closePath(); g.fill(); } }
+  else if(id==='feather'){ g.lineWidth=1.1*px; [-1,1].forEach(s=>{ const y0=s*Wd*.55; g.beginPath(); g.moveTo(L-.4,y0); g.quadraticCurveTo(0,y0+s*.25,-L+.3,y0); g.stroke();
+      g.beginPath(); for(let x=-L+.5;x<L-.5;x+=.18){ const u=(x+L)/sh.len, y=y0+s*.25*4*u*(1-u); g.moveTo(x,y); g.lineTo(x-.25,y-s*.3); g.moveTo(x,y); g.lineTo(x-.25,y+s*.22); } g.globalAlpha=.7; g.stroke(); g.globalAlpha=1; }); }
 }
 // "Boost!" pops up by the car with a squash-and-stretch bounce, always upright on screen
 function drawLabels(){
@@ -163,6 +206,24 @@ function drawLabels(){
     ctx.beginPath(); ctx.roundRect?ctx.roundRect(-w/2,-h/2,w,h,h/2):ctx.rect(-w/2,-h/2,w,h);
     if(p.big){ ctx.fillStyle='#000'; ctx.fill(); ctx.fillStyle='#fff'; } else { ctx.fillStyle='#fff'; ctx.fill(); ctx.lineWidth=2.2; ctx.strokeStyle='#000'; ctx.stroke(); ctx.fillStyle='#000'; }
     ctx.fillText(p.text,0,1); ctx.restore(); });
+}
+/* Coins spin like they're lying on the page catching the light. Ones over a jump float, with a shadow on the road.
+   A collected coin hops up, spins fast and vanishes. */
+function drawCoins(R,t,air){
+  const C=S.scene.coins; if(!C) return; const up=-cam.rot, [sx,sy]=shadowVec();
+  C.forEach(o=>{ if((o.z>.3)!==air) return; if(o.got&&o.gotT>.35) return; if(Math.abs(o.x-cam.x)>R||Math.abs(o.y-cam.y)>R) return;
+    const r=o.big?2.2:1.5, k=o.got?o.gotT/.35:0, lift=o.z+(o.got?k*3:0)+Math.sin(t*3+o.ph)*.12;
+    if(o.z>.3){ ctx.fillStyle='rgba(0,0,0,.12)'; ctx.beginPath(); ctx.ellipse(o.x+sx*lift,o.y+sy*lift,r*.9,r*.5,-cam.rot,0,TAU); ctx.fill(); }
+    ctx.save(); ctx.translate(o.x,o.y); ctx.rotate(up); ctx.translate(0,-lift*.9);
+    const spin=o.got?Math.cos(t*30):Math.cos(t*2.6+o.ph), sc=1+k*.6;
+    ctx.scale(Math.max(.4,Math.abs(spin))*sc,sc); ctx.globalAlpha=1-k;
+    // a bold black rim with a white face, so a coin never reads as a hay bale
+    ctx.beginPath(); ctx.arc(0,0,r,0,TAU); ctx.fillStyle='#000'; ctx.fill();
+    ctx.beginPath(); ctx.arc(0,0,r*.7,0,TAU); ctx.fillStyle='#fff'; ctx.fill();
+    if(o.big){ ctx.beginPath(); for(let q=0;q<10;q++){ const a=q/10*TAU-Math.PI/2, rr=q%2?r*.22:r*.5; q?ctx.lineTo(Math.cos(a)*rr,Math.sin(a)*rr):ctx.moveTo(Math.cos(a)*rr,Math.sin(a)*rr); } ctx.closePath(); ctx.fillStyle='#000'; ctx.fill(); }
+    else { ctx.fillStyle='#000'; ctx.fillRect(-r*.1,-r*.36,r*.2,r*.72); }
+    ctx.restore(); });
+  ctx.globalAlpha=1;
 }
 // round hay bales seen from above: a rolled spiral of straw, wobbling when knocked
 function drawBales(R){
@@ -176,10 +237,11 @@ function drawBales(R){
 function drawFlame(t){
   const c=S.car; if(!(c.boost>0)) return; const k=Math.min(1,c.boost/.3);
   ctx.save(); ctx.translate(c.rx,c.ry); ctx.rotate(c.ra); ctx.scale(CARDRAW,CARDRAW); ctx.lineCap="round"; ctx.lineJoin="round";
+  const B=-carDef(GARAGE.car).shape.len/2-.1;
   for(const y of [-.45,.45]){ const L=(1.4+Math.sin(t*50+y*9)*.4)*k;
-    ctx.beginPath(); ctx.moveTo(-2.2,y-.28); ctx.quadraticCurveTo(-2.2-L*.6,y-.3,-2.2-L,y); ctx.quadraticCurveTo(-2.2-L*.6,y+.3,-2.2,y+.28); ctx.closePath();
+    ctx.beginPath(); ctx.moveTo(B,y-.28); ctx.quadraticCurveTo(B-L*.6,y-.3,B-L,y); ctx.quadraticCurveTo(B-L*.6,y+.3,B,y+.28); ctx.closePath();
     ctx.fillStyle='#fff'; ctx.fill(); ctx.lineWidth=1.6*PX; ctx.strokeStyle='#000'; ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(-2.25,y); ctx.lineTo(-2.2-L*.55,y); ctx.stroke(); }
+    ctx.beginPath(); ctx.moveTo(B-.05,y); ctx.lineTo(B-L*.55,y); ctx.stroke(); }
   ctx.restore();
 }
 // the thumb's steering wheel: a ring where your thumb landed and a knob that follows it
@@ -210,6 +272,6 @@ function draw(t){
   worldTransform();
   ctx.fillStyle=S.def.surface==='snow'?PAT.field:PAT.grass; ctx.fillRect(cam.x-R,cam.y-R,R*2,R*2);
   drawRoad(st,R); drawLines(st); drawSkids(R); drawTapes();
-  drawBales(R); drawDust(); drawBits(); drawSigns(R); drawFlame(t); drawCar(); drawCrowd(R,t); drawTrees(R,t); drawBanners(st); drawLabels();
+  drawCoins(R,t,false); drawBales(R); drawDust(); drawBits(); drawSigns(R); drawFlame(t); drawCar(); drawCoins(R,t,true); drawCrowd(R,t); drawTrees(R,t); drawBanners(st); drawLabels();
   screenTransform(); drawSpeed(t); drawStick();
 }

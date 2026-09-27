@@ -1,0 +1,112 @@
+/* Ink Rally: The garage. Pick a car, buy new ones, upgrade them, paint them, and see each car's achievements. */
+"use strict";
+/* ============================================================
+   GARAGE
+   ============================================================ */
+let GV={car:null,tab:'up',raf:0,bounce:0};
+const coinTag=n=>`<i class="coin sm" aria-hidden="true"></i>${n}`;
+
+// draw a car into a small canvas: nose pointing right, tipped a little so it reads as a toy on the page
+function carThumb(cv,id,livery,number,o={}){
+  const d=Math.min(2,devicePixelRatio||1), w=cv.clientWidth||cv.width, h=cv.clientHeight||cv.height;
+  cv.width=Math.round(w*d); cv.height=Math.round(h*d); const g=cv.getContext('2d'), def=carDef(id), sh=def.shape;
+  const s=Math.min(w/(sh.len+(sh.wing==='big'||sh.spare?1.4:.8)), h/(sh.wid+(sh.wheelsOut?1.2:.7)))*(o.zoom||1);
+  g.setTransform(d,0,0,d,0,0); g.clearRect(0,0,w,h);
+  g.save(); g.translate(w/2+(o.dx||0),h/2+(o.dy||0)); g.rotate(o.ang||0); g.scale(s,s);
+  g.fillStyle='rgba(0,0,0,.14)'; rr(g,-sh.len/2+.25,-sh.wid/2+.3,sh.len,sh.wid,.5); g.fill();
+  const sq=o.sq||0; g.scale(1-sq*.2,1+sq*.35);
+  drawCarShape(g,def,livery,number,{px:1/s,steer:o.steer||0,roll:o.roll||0});
+  g.restore();
+}
+function showGarage(from){
+  S.st='home'; hudShow(false); hush(); engineSet(0,false,0,false,false);
+  GV.from=from||'home'; if(!GV.car) GV.car=GARAGE.car; renderGarage();
+}
+function renderGarage(){
+  const id=GV.car, def=carDef(id), have=owned(id), cs=GARAGE.cars[id];
+  const picks=CARS.map(c=>`<button class="cp${c.id===id?' on':''}${owned(c.id)?'':' lock'}" data-car="${c.id}" aria-pressed="${c.id===id}"><canvas></canvas>${c.name.split(' ')[0]}</button>`).join('');
+  const P=perfFor(id), base=perfFor('scribble');
+  const stat=(n,v)=>`<span>${n}</span><div class="bar"><i style="transform:scaleX(${clamp(v,.08,1).toFixed(3)})"></i></div>`;
+  const stats=stat('Top speed',(P.top-.85)/.45)+stat('Grip on tarmac',(P.grip-.8)/.55)+stat('Grip on gravel and snow',(P.loose-.75)/.65)+stat('Boost',((P.boostPow+P.charge)/2-.8)/.8)+stat('Jumps',(P.jump-.8)/.6);
+  const tabs=have?`<div class="tabs" role="tablist">${[['up','Upgrades'],['paint','Paint'],['ach','Achievements']].map(([k,n])=>`<button class="tab${GV.tab===k?' on':''}" role="tab" aria-selected="${GV.tab===k}" data-tab="${k}">${n}</button>`).join('')}</div>`:'';
+  let body='';
+  if(!have){
+    body=`<p class="cblurb">${def.blurb}</p><div class="stats">${stats}</div>
+      <button class="btn" id="buyCar">Buy the ${def.name} for ${def.price} coins</button>
+      <p class="perk" id="gmsg">${GARAGE.coins>=def.price?'':`You need ${def.price-GARAGE.coins} more coins. Collect them on the stages.`}</p>
+      ${achList(id)}`;
+  } else if(GV.tab==='up'){
+    body=`<p class="cblurb">${def.blurb}</p><div class="stats">${stats}</div><div class="gl">${UPGRADES.map(u=>{ const lv=cs.up[u.id], max=lv>=UPMAX, cost=max?0:u.cost[lv];
+      return `<div class="srow" data-up="${u.id}"><div class="sinfo"><b>${u.name}</b><small>${u.desc}</small><span class="pips" aria-label="Level ${lv} of ${UPMAX}">${Array.from({length:UPMAX},(_,i)=>`<i class="${i<lv?'on':''}"></i>`).join('')}</span></div>
+        ${max?'<span class="tagx">Maxed</span>':`<button class="sbuy" data-buy="${u.id}" aria-disabled="${GARAGE.coins<cost}" aria-label="Upgrade ${u.name} for ${cost} coins">${coinTag(cost)}</button>`}</div>`; }).join('')}</div>`;
+  } else if(GV.tab==='paint'){
+    const sig=LIVERIES.find(l=>l.sig===id);
+    body=`<div class="lv">${LIVERIES.filter(l=>!l.sig||l.sig===id).map(l=>{ const got=liveryOwned(l.id,id), on=cs.livery===l.id;
+      const tag=on?'On':got?'Owned':l.sig?'Achievements':coinTag(l.cost);
+      return `<button class="lvb${on?' on':''}${got?'':' lock'}" data-liv="${l.id}" aria-pressed="${on}"><canvas></canvas>${l.name}<small>${tag}</small></button>`; }).join('')}</div>
+      ${carDone(id)?'':`<p class="sighint">Earn every ${def.name} achievement to unlock its signature livery, <b>${sig.name}</b>.</p>`}
+      <p class="perk" id="gmsg"></p>`;
+  } else body=achList(id);
+  openCard(`<h2>Garage</h2>
+    <div class="wallet" id="wallet"><small>Coins</small><b><i class="coin" aria-hidden="true"></i>${GARAGE.coins.toLocaleString()}</b></div>
+    <div class="carpick">${picks}</div>
+    <div class="stage"><canvas id="gcar" aria-label="${def.name}"></canvas>
+      <div class="cap"><b>${def.name}</b><small>${def.kind}${have?'':` · ${def.price} coins`}</small></div>
+      ${have?`<div class="num" aria-label="Race number"><button id="numDn" aria-label="Lower number">−</button><b id="numV">${cs.number}</b><button id="numUp" aria-label="Higher number">+</button></div>`:''}</div>
+    ${have&&GARAGE.car!==id?`<button class="btn" id="useCar">Drive the ${def.name}</button><p></p>`:''}
+    ${tabs}${body}
+    <button class="btn ghost" id="gDone">${GV.from==='finish'?'Back':'Done'}</button>`,true);
+  // wire it up
+  document.querySelectorAll('.cp').forEach(b=>{ carThumb(b.querySelector('canvas'),b.dataset.car,(GARAGE.cars[b.dataset.car]||{}).livery||'stripes',(GARAGE.cars[b.dataset.car]||{}).number||carDef(b.dataset.car).number);
+    b.onclick=()=>{ GV.car=b.dataset.car; if(owned(GV.car)) { GARAGE.car=GV.car; saveGarage(); PERF=perfFor(GARAGE.car); } GV.bounce=1; renderGarage(); }; });
+  document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{ GV.tab=b.dataset.tab; renderGarage(); });
+  document.querySelectorAll('.lvb').forEach(b=>{ carThumb(b.querySelector("canvas"),id,b.dataset.liv,cs.number,{zoom:1.12}); b.onclick=()=>pickLivery(b); });
+  document.querySelectorAll('[data-buy]').forEach(b=>b.onclick=()=>buyUpgrade(b));
+  if($('buyCar')) $('buyCar').onclick=buyCar;
+  if($('useCar')) $('useCar').onclick=()=>{ GARAGE.car=id; saveGarage(); PERF=perfFor(id); sfx('buy'); renderGarage(); };
+  if($('numUp')) $('numUp').onclick=()=>setNumber(1);
+  if($('numDn')) $('numDn').onclick=()=>setNumber(-1);
+  $('gDone').onclick=()=>{ cancelAnimationFrame(GV.raf); GV.raf=0; if(GV.from==='finish'&&S.stage) showFinish(true); else showHome(); };
+  $('gcar').onclick=()=>{ GV.bounce=1; audioInit(); sfx('bump',.5); };
+  startPreview();
+}
+function achList(id){
+  return `<div class="achl">${ACHIEVEMENTS.filter(a=>a.car===id).map((a,i)=>{ const got=!!GARAGE.ach[a.id];
+    return `<div class="achr${got?'':' no'}" style="animation-delay:${i*.06}s">${trophySvg(got?'gold':null,30)}<div><b>${a.name}</b><small>${a.desc}</small></div><em>${got?'Done':coinTag(a.reward)}</em></div>`; }).join('')}</div>
+    ${owned(id)?'':`<p class="sighint">Achievements count once you own the ${carDef(id).name} and drive it.</p>`}`;
+}
+// the car in the garage bobs on its springs and twitches its wheels; tap it to bounce it
+function startPreview(){
+  cancelAnimationFrame(GV.raf); const cv=$('gcar'); if(!cv) return; const t0=performance.now();
+  const id=GV.car, cs=GARAGE.cars[id], liv=cs?cs.livery:'stripes', num=cs?cs.number:carDef(id).number;
+  const tick=now=>{ if(!document.body.contains(cv)) return; const t=(now-t0)/1000;
+    GV.bounce*=.9; const sq=RM?0:Math.sin(t*2.2)*.03+Math.sin(now/60)*GV.bounce*.25;
+    carThumb(cv,id,liv,num,{ang:-.35+(RM?0:Math.sin(t*.7)*.08),steer:RM?0:Math.sin(t*1.3)*.35,sq,zoom:.5,dy:16});
+    GV.raf=requestAnimationFrame(tick); };
+  GV.raf=requestAnimationFrame(tick);
+}
+function flashWallet(){ const w=$('wallet'); if(!w) return; w.classList.remove('flash'); void w.offsetWidth; w.classList.add('flash'); }
+function nope(el,msg){ sfx('nope'); if(el){ el.classList.remove('nope'); void el.offsetWidth; el.classList.add('nope'); } if(msg&&$('gmsg')) $('gmsg').textContent=msg; }
+function buyCar(){
+  const def=carDef(GV.car); audioInit();
+  if(GARAGE.coins<def.price) return nope($('buyCar'),`You need ${def.price-GARAGE.coins} more coins. Collect them on the stages.`);
+  GARAGE.coins-=def.price; GARAGE.cars[def.id]={up:{engine:0,tyres:0,boost:0},livery:'stripes',number:def.number};
+  GARAGE.car=def.id; PERF=perfFor(def.id); saveGarage(); sfx('achieve'); GV.tab='up'; GV.bounce=1.4; renderGarage(); flashWallet();
+  toast(`The ${def.name} is yours`,'It’s in your garage, ready to drive.');
+}
+function buyUpgrade(b){
+  const u=UPGRADES.find(x=>x.id===b.dataset.buy), cs=GARAGE.cars[GV.car], lv=cs.up[u.id], cost=u.cost[lv]; audioInit();
+  if(lv>=UPMAX) return; if(GARAGE.coins<cost) return nope(b);
+  GARAGE.coins-=cost; cs.up[u.id]=lv+1; saveGarage(); PERF=perfFor(GARAGE.car); sfx('buy'); GV.bounce=1;
+  renderGarage(); flashWallet(); const row=document.querySelector(`[data-up="${u.id}"]`); if(row){ row.classList.add('flash'); }
+}
+function pickLivery(b){
+  const lid=b.dataset.liv, L=LIVERIES.find(l=>l.id===lid), cs=GARAGE.cars[GV.car]; audioInit();
+  if(!liveryOwned(lid,GV.car)){
+    if(L.sig) return nope(b,`Earn every ${carDef(GV.car).name} achievement to unlock ${L.name}.`);
+    if(GARAGE.coins<L.cost) return nope(b,`${L.name} costs ${L.cost} coins. You need ${L.cost-GARAGE.coins} more.`);
+    GARAGE.coins-=L.cost; GARAGE.liveries.push(lid); sfx('buy'); flashWallet();
+  } else sfx('tick');
+  cs.livery=lid; saveGarage(); GV.bounce=1; renderGarage();
+}
+function setNumber(d){ const cs=GARAGE.cars[GV.car]; cs.number=((cs.number-1+d+99)%99)+1; saveGarage(); $('numV').textContent=cs.number; audioInit(); sfx('tick'); startPreview(); }

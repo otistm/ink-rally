@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.4.0
+- Coins on every stage: a line through the inside of each bend, weaving lines down the straights, and arcs in the air over the jumps with a big 5-coin prize at the top. The count is under the stage name.
+- Coins are yours when you cross the finish line, plus a trophy bonus: 50 for gold, 30 for silver, 15 for bronze. The finish card shows what you earned.
+- The garage, from the stages screen or the finish card:
+  - Four cars. Scribble (the hatchback you start with), Inkwell GT (fast on tarmac, 600 coins), Mudlark (a 4x4 that grips gravel and snow and flies off jumps, 600) and Quill (a buggy built for sliding and boosting, 900). Each is drawn differently and drives differently.
+  - Upgrades for each car: Engine, Tyres and Boost, four levels each.
+  - Paint: eight ink liveries to buy (plain, twin stripes, racing band, checkers, hatched, polka dots, flames, night), plus a signature livery for each car.
+  - Pick your own race number.
+- Three achievements for each car, earned while driving it. Each pays coins the moment you get it, and earning all three unlocks that car's signature livery (Doodles, Pinstripes, Ink camo, Feathers).
+
 ## 0.3.1
 - Fixed the small up-and-down judder as the car drives. The car now glides smoothly, especially on phones with fast (90 or 120 Hz) screens.
 - The car is about a third bigger on screen, and the camera sits slightly closer.
