@@ -41,9 +41,9 @@ function showHome(){
   const car=carDef(GARAGE.car);
   openCard(`<h2 class="logo">Ink Rally</h2><p>Drive fast. Stay on the road. Get trophies.</p>
     <button class="shopbtn" id="toGarage"><canvas></canvas><span><b>Garage</b><small>${car.name} · cars, upgrades and paint</small></span></button>
-    ${ONLINE?`<p class="asname">Driving as <b>${esc(meta.name)}</b>${meta.grp?` in <b>${esc(meta.grp)}</b>`:''} <button class="linkbtn" id="editName">Change name or group</button></p>
-    <p class="netline" id="netline">Going online…</p>`:''}
+    ${ONLINE?`<p class="asname">Driving as <b>${esc(meta.name)}</b>${meta.grp?` in <b>${esc(meta.grp)}</b>`:''} <button class="linkbtn" id="editName">Change name or group</button></p>`:''}
     <div class="events">${rows}</div>
+    ${ONLINE?'<p class="netline center" id="netline">Going online…</p>':''}
     <button class="fbc${voiceOn?' on':''}" id="voiceBtn" aria-pressed="${voiceOn}">Co-driver voice: ${voiceOn?'on':'off'}</button>
     <p class="ver">Version ${VERSION}</p>`,true);
   document.querySelectorAll('.event').forEach(b=>b.onclick=()=>{ audioInit(); startStage(b.dataset.id); });
