@@ -9,7 +9,7 @@ function seeded(s){ return ()=>{ s=(s*16807)%2147483647; return (s-1)/2147483646
 function angDiff(a,b){ let d=(b-a)%TAU; if(d>Math.PI) d-=TAU; if(d<-Math.PI) d+=TAU; return d; }
 
 // The car. Speeds in m/s (48 m/s is about 173 km/h). turn: fastest the nose swings, in radians a second.
-const CAR={len:4.2,wid:1.9,accel:14,vmax:48,brake:20,reverse:7,turn:2.5};
+const CAR={len:4.2,wid:1.9,accel:14,vmax:48,brake:20,reverse:7,turn:2.8};
 
 /* Arcade handling: the nose turns as soon as you steer, and the car's travel swings round to follow it.
    k: how quickly the travel catches up with the nose (low = long slides)

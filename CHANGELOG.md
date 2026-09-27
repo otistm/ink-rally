@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.2
+- Steering is snappier. The car reacts to the wheel about twice as fast, full lock is about 70° of wheel instead of 95°, and small turns near the centre do more.
+- Fixed: after a hiccup on the phone (a notification, a slow moment), the game could stall while it caught up. It now picks straight back up.
+
 ## 0.5.1
 - The wheel is now a solid black ring with no spokes. A white circle appears where your thumb touches it and slides round the ring as you steer. A white notch on the ring still marks straight ahead.
 - Your speed stays in the middle of the wheel.

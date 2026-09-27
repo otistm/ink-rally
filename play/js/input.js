@@ -1,12 +1,12 @@
 /* Ink Rally: The steering wheel. The car goes by itself; you steer by turning the wheel at the bottom of the screen,
    like the click wheel on an old iPod: put your thumb down anywhere and circle it left or right. The wheel turns
-   from where you touched (no jump), a quarter turn is full lock, and it springs back to the centre when you let go.
+   from where you touched (no jump), about 70° is full lock, and it springs back to the centre when you let go.
    Arrow keys turn it too. */
 "use strict";
 /* ============================================================
    INPUT
    ============================================================ */
-const LOCK=95*Math.PI/180;   // how far the wheel turns for full lock
+const LOCK=70*Math.PI/180;   // how far the wheel turns for full lock
 const IN={down:false,gas:false,brake:0,steer:0,ptr:null,keys:{},
   reset(){ this.ptr=null; this.keys={}; this.down=false; this.gas=false; this.brake=0; this.steer=0; WH.ang=0; WH.vel=0; }};
 // the wheel: its angle in radians (right is positive) and the spring that brings it home
@@ -23,7 +23,7 @@ function inputUpdate(dt){
   else { // let go: it springs back to the middle with a little wobble
     WH.vel+=(-140*WH.ang-14*WH.vel)*dt; WH.ang+=WH.vel*dt; IN.down=false; }
   const u=clamp(WH.ang/LOCK,-1,1);
-  IN.steer=IN.down?Math.sign(u)*Math.pow(Math.abs(u),1.2):0;
+  IN.steer=IN.down?Math.sign(u)*Math.pow(Math.abs(u),.85):0; // a little extra bite near the centre
   IN.gas=true; IN.brake=0;
   const g=$('wrot'); if(g) g.style.transform=`rotate(${(WH.ang*180/Math.PI).toFixed(2)}deg)`;
   // the white knob sits on the rim where the thumb grabbed it and turns with the wheel

@@ -20,7 +20,7 @@ function carStep(dt){
   const sf=SURF[c.surf], air=c.z>.02;
   // the car drives itself forward; pulling your thumb down brakes
   const brk=driving?IN.brake:S.st==='finish'?.6:0, gas=driving&&brk<.08;
-  c.steer+=((driving||S.st==='finish'?IN.steer:0)-c.steer)*Math.min(1,dt*12);
+  c.steer+=((driving||S.st==='finish'?IN.steer:0)-c.steer)*Math.min(1,dt*22);
   c.gas=gas; c.brk=brk;
   if(S.st==='count'){ c.vx=c.vy=c.w=c.vf=c.vl=c.slip=0; c.drift=0; return; }
   const f0=Math.cos(c.a), f1=Math.sin(c.a), sp=Math.hypot(c.vx,c.vy);
@@ -28,7 +28,7 @@ function carStep(dt){
   let vdir=sp>.5?Math.atan2(c.vy,c.vx):c.a; if(spd<0) vdir+=Math.PI;
   // steering turns the nose at a steady rate: gentle when crawling, full from about 30 km/h
   const turn=CAR.turn*PERF.turn*clamp(Math.abs(spd)/9,.15,1)*(1-Math.min(.2,Math.abs(spd)/240))*(air?.5:1);
-  c.w+=(c.steer*turn*(spd<0?-1:1)-c.w)*Math.min(1,dt*10);
+  c.w+=(c.steer*turn*(spd<0?-1:1)-c.w)*Math.min(1,dt*18);
   c.a+=c.w*dt;
   if(!air){
     const boost=c.boost>0, top=CAR.vmax*PERF.top*sf.top*(boost?1+.15*PERF.boostPow:1);
@@ -124,7 +124,7 @@ function trails(c,dt){
   if(mark&&c.wheelL){ const a=clamp(.15+c.slip*.05+(c.brk>.4?.2:0),.1,.6); addSkid(c.wheelL[0],c.wheelL[1],L[0],L[1],a); addSkid(c.wheelR[0],c.wheelR[1],R[0],R[1],a); }
   c.wheelL=mark?L:null; c.wheelR=mark?R:null;
   const sl=Math.min(6,c.slip), rate=c.z>.05?0:sf.loose?(sp*.9+sl*6)*(c.surf==='grass'?.4:1):(sl>2.5?sl*5:0);
-  c.dustAcc=(c.dustAcc||0)+rate*dt*(RM?.4:1);
+  c.dustAcc=Math.min(8,(c.dustAcc||0)+rate*dt*(RM?.4:1)); if(!(c.dustAcc>=0)) c.dustAcc=0;
   while(c.dustAcc>1){ c.dustAcc-=1; puff(c,false); }
   if(c.surf==='grass'&&sp>4&&Math.random()<dt*sp*.8) bit(bx,by,-c.vx*.2,-c.vy*.2,'tuft');
   // a charged drift throws ink sparks off the back wheels; more of them once it's a super boost

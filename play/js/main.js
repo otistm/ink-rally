@@ -19,7 +19,8 @@ function tick(now){
   const dt=Math.max(0,Math.min(.05,(now-lastT)/1000)); lastT=now; S.t+=dt;
   if(S.stage&&S.st!=='home'&&S.st!=='pause'){
     inputUpdate(dt);
-    acc+=dt; const c0=S.car; while(acc>=DT){ c0.px=c0.x; c0.py=c0.y; c0.pa=c0.a; carStep(DT); acc-=DT; }
+    // never try to catch up more than a tenth of a second at once, so a slow frame can't snowball
+    acc=Math.min(acc+dt,.1); const c0=S.car; while(acc>=DT){ c0.px=c0.x; c0.py=c0.y; c0.pa=c0.a; carStep(DT); acc-=DT; }
     // physics moves in fixed steps, but frames don't land evenly on them: draw the car part-way between
     // its last two steps so it glides instead of juddering
     { const u=acc/DT, ok=c0.px!==undefined&&Math.hypot(c0.x-c0.px,c0.y-c0.py)<5;
