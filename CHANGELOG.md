@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.1
+- The wheel is now a solid black ring with no spokes. A white circle appears where your thumb touches it and slides round the ring as you steer. A white notch on the ring still marks straight ahead.
+- Your speed stays in the middle of the wheel.
+
 ## 0.5.0
 - A steering wheel. The top half of a wheel sits at the bottom of the screen. Put your thumb anywhere on it (or anywhere on the screen) and circle it left or right to steer, like an iPod click wheel. It turns from wherever your thumb lands, so there's no sudden jerk.
 - A notch at the top of the wheel and a fixed pointer above it show straight ahead. When they line up, you're going straight.

@@ -26,13 +26,15 @@ function inputUpdate(dt){
   IN.steer=IN.down?Math.sign(u)*Math.pow(Math.abs(u),1.2):0;
   IN.gas=true; IN.brake=0;
   const g=$('wrot'); if(g) g.style.transform=`rotate(${(WH.ang*180/Math.PI).toFixed(2)}deg)`;
+  // the white knob sits on the rim where the thumb grabbed it and turns with the wheel
+  const kn=$('knob'); if(kn){ if(p){ const a=p.grab+(WH.ang-p.start); kn.style.transform=`translate(${(200+Math.cos(a)*184).toFixed(1)}px,${(230+Math.sin(a)*184).toFixed(1)}px)`; } kn.classList.toggle('on',!!p); }
 }
 function wheelShow(on){ const w=$('wheelWrap'); w.hidden=!on; if(on){ w.classList.remove('in'); void w.offsetWidth; w.classList.add('in'); } }
 cv.addEventListener('pointerdown',e=>{
   if(S.st!=='drive'&&S.st!=='count') return;
   audioInit(); try{ cv.setPointerCapture(e.pointerId); }catch(_){} wheelCentre();
   const a=thumbAngle(e.clientX,e.clientY);
-  IN.ptr={id:e.pointerId,x:e.clientX,y:e.clientY,last:a,start:WH.ang,turn:0};
+  IN.ptr={id:e.pointerId,x:e.clientX,y:e.clientY,last:a,start:WH.ang,turn:0,grab:a};
   const w=$('wheel'); w.classList.remove('grab'); void w.getBoundingClientRect(); w.classList.add('grab');
 });
 cv.addEventListener('pointermove',e=>{ const p=IN.ptr; if(!p||p.id!==e.pointerId) return; p.x=e.clientX; p.y=e.clientY; });
