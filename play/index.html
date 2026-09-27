@@ -35,12 +35,25 @@
   <div><b id="noteT">Left 3</b><small id="noteN"></small></div>
 </div>
 
-<div id="speedo" hidden><b id="kmh">0</b><small>km/h</small></div>
+<div id="wheelWrap" hidden aria-hidden="true">
+  <svg id="wheel" viewBox="0 0 400 250">
+    <!-- the fixed pointer: when the wheel's notch sits under it, you're going straight -->
+    <path d="M187 0 H213 L200 17 Z" fill="#000"/>
+    <g id="wrot" style="transform-origin:200px 230px">
+      <circle cx="200" cy="230" r="176" fill="none" stroke="#000" stroke-width="60"/>
+      <rect x="195" y="32" width="10" height="44" rx="5" fill="#fff"/>
+    </g>
+    <!-- where your thumb holds the wheel: it slides round the rim under your thumb -->
+    <g id="knob" style="transform-origin:0 0"><circle r="24" fill="#fff" stroke="#000" stroke-width="4"/></g>
+    <text id="wkmh" x="200" y="214" text-anchor="middle">0</text>
+    <text x="200" y="234" text-anchor="middle" class="wu">km/h</text>
+  </svg>
+</div>
 <button id="pause" type="button" aria-label="Pause" hidden>
   <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="9" y="8" width="5" height="16" rx="1.5" fill="currentColor"/><rect x="18" y="8" width="5" height="16" rx="1.5" fill="currentColor"/></svg>
 </button>
 <button id="rescue" type="button" hidden>Back on the road</button>
-<div id="hint" hidden><span id="hintT">Hold anywhere to go</span></div>
+<div id="hint" hidden><span id="hintT">Turn the wheel to steer</span></div>
 
 <div id="toast" hidden role="status" aria-live="polite"><b id="toastT"></b><small id="toastS"></small></div>
 <div id="callout"></div>
