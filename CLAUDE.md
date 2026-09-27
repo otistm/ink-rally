@@ -19,15 +19,15 @@ Otis is the designer. He doesn't read code. He judges changes by playing them on
 | config.js | `VERSION` |
 | engine.js | Car constants, surfaces (grip, slide, traction), the stage builder that turns pacenotes into a road, medal times |
 | stages.js | All stages, written as pacenotes |
-| cars.js | Cars, upgrades, liveries, achievements, the saved garage, and each car's performance (`perfFor`, `PERF`) |
+| cars.js | Cars, upgrades, liveries, achievements, reward cards, the saved garage, and each car's performance (`perfFor`, `PERF`) |
 | render.js | Canvas, ink patterns, the camera (it turns with the car) |
-| world.js | Game state `S`, tyre marks, coins, scenery (trees, hay bales, crowds, chevron boards) |
+| world.js | Game state `S`, tyre marks, scenery (trees, hay bales, crowds, chevron boards) |
 | audio.js | Procedural engine and tyre sounds, knocks, the co-driver's voice |
-| ui.js | HUD, coin counter, pacenote card, achievement toasts, callouts, hints |
-| screens.js | Saved bests, stages screen, pause, finish card (with coins earned) |
-| garage.js | The garage: cars, upgrades, paint, race number, achievements |
-| flow.js | Starting a stage, countdown, co-driver calls, splits, achievements, banking coins, finish, wrong way, rescue |
-| physics.js | Arcade handling (scaled by the car's `PERF`), drift boost, jumps and crests, coins, hay bales, trees and boards, dust |
+| ui.js | HUD, pacenote card, achievement toasts, callouts, hints |
+| screens.js | Saved bests, stages screen, pause, finish card with reward picks |
+| garage.js | The garage: pick a car, see its upgrades, paint, race number, achievements |
+| flow.js | Starting a stage, countdown, co-driver calls, splits, achievements, deciding reward picks, finish, wrong way, rescue |
+| physics.js | Arcade handling (scaled by the car's `PERF`), drift boost, jumps and crests, hay bales, trees and boards, dust |
 | input.js | One-thumb steering and braking, arrow keys |
 | draw.js | Drawing everything, including every car shape and livery (`drawCarShape`, `paintLivery`) |
 | main.js | Main loop, camera, startup (always last) |
@@ -40,12 +40,12 @@ Otis wants it to feel like an arcade racer, not a realistic one.
 - Hay bales on the outside of bends bounce you back with little speed lost. Trees are the only hard stops, and they stand well back from the road.
 - The camera keeps the car in the middle of the screen, away from the thumb.
 
-## Coins, cars and the garage
-- Coins are placed from each stage's pacenotes (`placeCoins` in world.js): the inside line of bends, weaving lines on straights, and arcs over jumps. There are about 170 to 200 per stage, and a good run collects 100 to 130.
-- Coins picked up in a run are banked only at the finish, plus a trophy bonus (`MEDAL_COINS`). Quitting or restarting loses that run's coins. Achievement rewards are paid the moment they're earned.
-- Prices live in cars.js: cars 600, 600 and 900; upgrades 50 to 260 a level; liveries 80 to 300. So a new car takes about 5 to 8 good runs.
+## Rewards, cars and the garage
+- There are no coins. Like Ink Nine's reward cards: a podium finish earns a pick at the finish (`PICKS` in cars.js: 1st chooses from 3 cards, 2nd from 2, 3rd takes 1), and every achievement earned in that stage adds a bonus pick from 3.
+- A card is an upgrade level for the car just driven, a car not yet owned, or a livery not yet owned (`rewardOffer` and `applyReward` in cars.js). Offers try to include one of each kind. The finish card's buttons only appear once every pick is made.
+- Upgrades belong to one car, so you upgrade a car by driving it. Bought liveries are shared by all cars; a signature livery belongs to one car and unlocks when all its achievements are done.
 - Each car's `stats` multiply the base handling; upgrades add to them in `perfFor`. Achievements belong to one car and only count while driving it.
-- Liveries are ink only (patterns, never colour). Bought liveries are shared by all cars; a signature livery belongs to one car and unlocks when all its achievements are done.
+- Liveries are ink only (patterns, never colour).
 
 ## Stages are pacenotes
 A stage in `stages.js` is a list of notes, the way a co-driver reads them: `['S',80]` straight 80 m, `['L',3,90]` left grade 3 turning 90°, a fourth value `1` marks "caution", plus `['crest']`, `['jump']` and `['surf','tarmac']`. Grade 1 is hairpin-tight, 6 is nearly flat out. The road, the co-driver's calls, the crowds, the chevron boards and the medal times all come from this list.
@@ -60,7 +60,7 @@ A stage in `stages.js` is a list of notes, the way a co-driver reads them: `['S'
 
 ## Protect players' saved progress
 Progress is kept in the browser's localStorage. An update must never wipe or break it.
-- Keys: `inkrally-bests` (per stage id: best time, split times, `rev` of the layout it was set on, and any `old` time from an earlier layout), `inkrally-meta` (`v`, voice on or off), `inkrally-garage` (`v`, `coins`, `total`, the selected `car`, owned `cars` with their `up`grades, `livery` and `number`, bought `liveries`, earned `ach`ievements).
+- Keys: `inkrally-bests` (per stage id: best time, split times, `rev` of the layout it was set on, and any `old` time from an earlier layout), `inkrally-meta` (`v`, voice on or off), `inkrally-garage` (`v`, the selected `car`, owned `cars` with their `up`grades, `livery` and `number`, bought `liveries`, earned `ach`ievements; old `coins` and `total` from the coin shop are kept but unused).
 - Never rename a car, upgrade, livery or achievement `id`; they are saved in players' garages.
 - Never rename or remove a saved field or a stage `id`. Add new fields with defaults.
 - Changing a stage's layout: bump its `rev` in stages.js. Old times are then set aside (kept under `old`) instead of compared. Tell Otis when that happens.
@@ -77,8 +77,7 @@ Progress is kept in the browser's localStorage. An update must never wipe or bre
 - Start Pinewood: countdown 3, 2, 1, Go; the car drives off by itself; sliding your thumb steers; pulling down brakes.
 - Hold a slide through a bend: sparks appear, and straightening up gives "Boost!" with flames.
 - The co-driver card and voice call each bend before it arrives; splits show at one and two thirds.
-- Coins: driving through them ticks the counter up; the big coin over a jump says +5; the finish card shows coins picked up, the trophy bonus and the new garage total.
-- Garage: buy a car, an upgrade and a livery; the wallet drops, the change shows on the car, and it's all still there after a refresh.
+- Finish on the podium: the card says your place and offers reward cards (3, 2 or 1); picking one applies it, the buttons appear, and it's still in the garage after a refresh.
 - Clip a hay bale: a soft bounce back onto the road. Hit a tree: the car stops with a knock and shake; "Back on the road" appears and works.
 - The finish card shows your time, the medal board, and the best time is kept after a refresh.
 - No errors in the browser console.

@@ -66,7 +66,6 @@ function carStep(dt){
     else if(m.k==='crest'&&c.vf>20){ c.vz=(c.vf-20)*.22*PERF.jump; c.z=.03; c.takeoff=[c.x,c.y]; } }
   if(S.markI>0&&st.marks[S.markI-1].s>c.s+5) S.markI--;
   collide(c);
-  collectCoins(c);
   trails(c,dt);
 }
 /* Drift boost: slide for a moment and the charge builds (sparks fly from the back wheels);
@@ -105,17 +104,6 @@ function collide(c){
     s.hit=true; s.vx=c.vx*.9+(Math.random()-.5)*4; s.vy=c.vy*.9+(Math.random()-.5)*4; s.vz=4+Math.abs(c.vf)*.15; s.spin=(Math.random()<.5?-1:1)*(6+Math.random()*6);
     c.vx*=.97; c.vy*=.97; S.shake+=3; sfx('crash',.35); for(let i=0;i<5;i++) bit(s.x,s.y,c.vx*.4,c.vy*.4,'chip'); });
 }
-/* Coins: drive through them on the road, or catch them in the air over the jumps. Big coins are worth 5. */
-function collectCoins(c){
-  const sc=S.scene; if(!sc.coins) return;
-  const f0=Math.cos(c.a), f1=Math.sin(c.a);
-  for(const u of [1.4,0,-1.4]){ const qx=c.x+f0*u, qy=c.y+f1*u;
-    near(sc.cgrid,qx,qy,k=>{ const o=sc.coins[k]; if(o.got) return;
-      if(Math.hypot(o.x-qx,o.y-qy)>(o.big?2.8:2.3)||Math.abs(c.z-o.z)>2) return;
-      o.got=true; o.gotT=0; const v=o.big?5:1; S.runCoins+=v; if(S.run) S.run.coins+=v;
-      S.coinChain=(S.coinT<.5?S.coinChain+1:0); S.coinT=0; sfx('coin',Math.min(12,S.coinChain)); if(o.big){ sfx('bigcoin'); label(c,'+5',false); } coinHUD(); });
-  }
-}
 // tyre marks and dust
 function trails(c,dt){
   const f0=Math.cos(c.a), f1=Math.sin(c.a), r0=-f1, r1=f0, bx=c.x-f0*1.3, by=c.y-f1*1.3;
@@ -150,5 +138,4 @@ function partsStep(dt){
     if(s.z===0){ s.vx*=Math.exp(-dt*5); s.vy*=Math.exp(-dt*5); s.spin*=Math.exp(-dt*5); s.vz=s.vz<-2?-s.vz*.3:0; } });
   S.scene.trees.forEach(t=>{ if(t.hit) t.hit=Math.max(0,t.hit-dt); });
   S.scene.bales.forEach(b=>{ if(b.hit) b.hit=Math.max(0,b.hit-dt); });
-  S.scene.coins.forEach(o=>{ if(o.got&&o.gotT<1) o.gotT+=dt; });
 }

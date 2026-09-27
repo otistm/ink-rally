@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.6.0
+- Coins are gone. Instead, finish a stage in the top three to choose a reward, like the reward cards in Ink Nine: 1st place picks from 3 cards, 2nd from 2, and 3rd gets 1 card.
+- A reward card is an upgrade level for the car you just drove (Engine, Tyres or Boost), a new car, or a new livery.
+- Each achievement you earn gives a bonus pick from 3 cards at the end of that stage. Earning all three for a car still unlocks its signature livery.
+- The finish card now says your place ("1st place!", "2nd place", "3rd place") and lists the rewards you chose.
+- The garage no longer sells anything. It shows your cars, their upgrades and your paint, and tells you how to win the rest. You can still pick your car, paint and race number there.
+- The "Pocket money" achievement (collect 100 coins) is now "Boost buddy": fire 5 boosts in one stage.
+- The steering wheel sits a little lower on the screen.
+- Anything you already bought with coins is still yours.
+
 ## 0.5.3
 - The steering wheel ring is about half as thick again, with a bigger thumb circle and notch to match.
 

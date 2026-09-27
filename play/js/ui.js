@@ -40,7 +40,6 @@ function showNote(call){
   el.classList.toggle('warn',call.caution);
   el.hidden=false; el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop');
 }
-function coinHUD(){ const el=$('ccount'); el.textContent=S.runCoins||0; const w=$('hcoins'); w.classList.remove('bump'); void w.offsetWidth; w.classList.add('bump'); }
 let toastQ=[], toastOn=false;
 function toast(title,sub){ toastQ.push([title,sub]); if(!toastOn) nextToast(); }
 function nextToast(){ const q=toastQ.shift(), el=$('toast'); if(!q){ toastOn=false; el.hidden=true; return; } toastOn=true;

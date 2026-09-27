@@ -207,24 +207,6 @@ function drawLabels(){
     if(p.big){ ctx.fillStyle='#000'; ctx.fill(); ctx.fillStyle='#fff'; } else { ctx.fillStyle='#fff'; ctx.fill(); ctx.lineWidth=2.2; ctx.strokeStyle='#000'; ctx.stroke(); ctx.fillStyle='#000'; }
     ctx.fillText(p.text,0,1); ctx.restore(); });
 }
-/* Coins spin like they're lying on the page catching the light. Ones over a jump float, with a shadow on the road.
-   A collected coin hops up, spins fast and vanishes. */
-function drawCoins(R,t,air){
-  const C=S.scene.coins; if(!C) return; const up=-cam.rot, [sx,sy]=shadowVec();
-  C.forEach(o=>{ if((o.z>.3)!==air) return; if(o.got&&o.gotT>.35) return; if(Math.abs(o.x-cam.x)>R||Math.abs(o.y-cam.y)>R) return;
-    const r=o.big?2.2:1.5, k=o.got?o.gotT/.35:0, lift=o.z+(o.got?k*3:0)+Math.sin(t*3+o.ph)*.12;
-    if(o.z>.3){ ctx.fillStyle='rgba(0,0,0,.12)'; ctx.beginPath(); ctx.ellipse(o.x+sx*lift,o.y+sy*lift,r*.9,r*.5,-cam.rot,0,TAU); ctx.fill(); }
-    ctx.save(); ctx.translate(o.x,o.y); ctx.rotate(up); ctx.translate(0,-lift*.9);
-    const spin=o.got?Math.cos(t*30):Math.cos(t*2.6+o.ph), sc=1+k*.6;
-    ctx.scale(Math.max(.4,Math.abs(spin))*sc,sc); ctx.globalAlpha=1-k;
-    // a bold black rim with a white face, so a coin never reads as a hay bale
-    ctx.beginPath(); ctx.arc(0,0,r,0,TAU); ctx.fillStyle='#000'; ctx.fill();
-    ctx.beginPath(); ctx.arc(0,0,r*.7,0,TAU); ctx.fillStyle='#fff'; ctx.fill();
-    if(o.big){ ctx.beginPath(); for(let q=0;q<10;q++){ const a=q/10*TAU-Math.PI/2, rr=q%2?r*.22:r*.5; q?ctx.lineTo(Math.cos(a)*rr,Math.sin(a)*rr):ctx.moveTo(Math.cos(a)*rr,Math.sin(a)*rr); } ctx.closePath(); ctx.fillStyle='#000'; ctx.fill(); }
-    else { ctx.fillStyle='#000'; ctx.fillRect(-r*.1,-r*.36,r*.2,r*.72); }
-    ctx.restore(); });
-  ctx.globalAlpha=1;
-}
 // round hay bales seen from above: a rolled spiral of straw, wobbling when knocked
 function drawBales(R){
   const B=S.scene.bales.filter(b=>Math.abs(b.x-cam.x)<R&&Math.abs(b.y-cam.y)<R); if(!B.length) return; const [sx,sy]=shadowVec();
@@ -260,6 +242,6 @@ function draw(t){
   worldTransform();
   ctx.fillStyle=S.def.surface==='snow'?PAT.field:PAT.grass; ctx.fillRect(cam.x-R,cam.y-R,R*2,R*2);
   drawRoad(st,R); drawLines(st); drawSkids(R); drawTapes();
-  drawCoins(R,t,false); drawBales(R); drawDust(); drawBits(); drawSigns(R); drawFlame(t); drawCar(); drawCoins(R,t,true); drawCrowd(R,t); drawTrees(R,t); drawBanners(st); drawLabels();
+  drawBales(R); drawDust(); drawBits(); drawSigns(R); drawFlame(t); drawCar(); drawCrowd(R,t); drawTrees(R,t); drawBanners(st); drawLabels();
   screenTransform(); drawSpeed(t);
 }
