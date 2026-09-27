@@ -16,7 +16,7 @@ function startStage(id){
   S.run=newRun(def.id); S.runCoins=0; S.coinChain=0; S.coinT=9; S.achT=0; S.newAch=[]; S.banked=null; S.finHTML=null; coinHUD();
   cam.x=p.x+Math.cos(p.a)*20; cam.y=p.y+Math.sin(p.a)*20; cam.z=5; cam.rot=-Math.PI/2-p.a;
   closeCard(); hudShow(true); hudStage(); IN.reset(); hush();
-  $('note').hidden=true; hint('Slide your thumb to steer');
+  $('note').hidden=true; hint('Turn the wheel to steer');
   say(`${def.name}. Stage start.`,true);
 }
 
@@ -49,7 +49,7 @@ function flowStep(dt){
   if(S.st==='count'){
     S.count-=dt; const n=Math.ceil(S.count);
     if(n!==S.lastCount&&n<=3&&n>=1){ S.lastCount=n; callout(String(n)); sfx('beep'); }
-    if(S.count<=0){ S.st='drive'; callout('Go!'); sfx('go'); hint(IN.down?null:'Slide your thumb to steer'); }
+    if(S.count<=0){ S.st='drive'; callout('Go!'); sfx('go'); hint(IN.down?null:'Turn the wheel to steer'); }
     return;
   }
   if(S.st==='drive') S.race+=dt;

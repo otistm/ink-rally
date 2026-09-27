@@ -244,18 +244,6 @@ function drawFlame(t){
     ctx.beginPath(); ctx.moveTo(B-.05,y); ctx.lineTo(B-L*.55,y); ctx.stroke(); }
   ctx.restore();
 }
-// the thumb's steering wheel: a ring where your thumb landed and a knob that follows it
-function drawStick(){
-  const p=IN.ptr; if(!p) return; const dx=clamp(p.x-p.x0,-STEER_PX-10,STEER_PX+10), dy=clamp(p.y-p.y0,-12,BRAKE_PX+BRAKE_RANGE);
-  ctx.save(); ctx.strokeStyle='#000'; ctx.lineCap='round';
-  ctx.globalAlpha=.25; ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(p.x0-STEER_PX,p.y0); ctx.lineTo(p.x0+STEER_PX,p.y0); ctx.stroke();
-  ctx.setLineDash([3,5]); ctx.beginPath(); ctx.moveTo(p.x0,p.y0+BRAKE_PX); ctx.lineTo(p.x0,p.y0+BRAKE_PX+BRAKE_RANGE); ctx.stroke(); ctx.setLineDash([]);
-  ctx.globalAlpha=.6; ctx.font='800 11px Figtree, system-ui, sans-serif'; ctx.fillStyle='#000'; ctx.textAlign='center'; ctx.fillText('brake',p.x0,p.y0+BRAKE_PX+BRAKE_RANGE+14);
-  ctx.globalAlpha=1; ctx.lineWidth=2.5; const br=IN.brake>.08;
-  ctx.beginPath(); ctx.arc(p.x0+dx,p.y0+dy,17,0,TAU); ctx.fillStyle=br?'#000':'#fff'; ctx.fill(); ctx.stroke();
-  if(!br){ ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(p.x0+dx-5,p.y0+dy+2); ctx.lineTo(p.x0+dx,p.y0+dy-4); ctx.lineTo(p.x0+dx+5,p.y0+dy+2); ctx.stroke(); }
-  ctx.restore();
-}
 // speed lines at the screen edges when you're flying
 function drawSpeed(t){
   const v=Math.abs(S.car.vf)+(S.car.boost>0?14:0); if(v<30||RM) return; const k=Math.min(1.3,(v-30)/14);
@@ -273,5 +261,5 @@ function draw(t){
   ctx.fillStyle=S.def.surface==='snow'?PAT.field:PAT.grass; ctx.fillRect(cam.x-R,cam.y-R,R*2,R*2);
   drawRoad(st,R); drawLines(st); drawSkids(R); drawTapes();
   drawCoins(R,t,false); drawBales(R); drawDust(); drawBits(); drawSigns(R); drawFlame(t); drawCar(); drawCoins(R,t,true); drawCrowd(R,t); drawTrees(R,t); drawBanners(st); drawLabels();
-  screenTransform(); drawSpeed(t); drawStick();
+  screenTransform(); drawSpeed(t);
 }

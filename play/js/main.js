@@ -18,7 +18,7 @@ function camStep(dt){
 function tick(now){
   const dt=Math.max(0,Math.min(.05,(now-lastT)/1000)); lastT=now; S.t+=dt;
   if(S.stage&&S.st!=='home'&&S.st!=='pause'){
-    inputUpdate();
+    inputUpdate(dt);
     acc+=dt; const c0=S.car; while(acc>=DT){ c0.px=c0.x; c0.py=c0.y; c0.pa=c0.a; carStep(DT); acc-=DT; }
     // physics moves in fixed steps, but frames don't land evenly on them: draw the car part-way between
     // its last two steps so it glides instead of juddering

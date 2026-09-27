@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.0
+- A steering wheel. The top half of a wheel sits at the bottom of the screen. Put your thumb anywhere on it (or anywhere on the screen) and circle it left or right to steer, like an iPod click wheel. It turns from wherever your thumb lands, so there's no sudden jerk.
+- A notch at the top of the wheel and a fixed pointer above it show straight ahead. When they line up, you're going straight.
+- A quarter turn is full lock. Let go and the wheel springs back to the centre with a small wobble.
+- Your speed is now shown in the middle of the wheel. The pause button moved to the top-right corner, beside the clock.
+- No more braking. The car drives itself and you only steer.
+- The car sits a little higher on screen, so the wheel never covers it.
+
 ## 0.4.0
 - Coins on every stage: a line through the inside of each bend, weaving lines down the straights, and arcs in the air over the jumps with a big 5-coin prize at the top. The count is under the stage name.
 - Coins are yours when you cross the finish line, plus a trophy bonus: 50 for gold, 30 for silver, 15 for bronze. The finish card shows what you earned.

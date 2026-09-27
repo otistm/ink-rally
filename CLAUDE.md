@@ -34,7 +34,7 @@ Otis is the designer. He doesn't read code. He judges changes by playing them on
 
 ## How it drives (arcade, not a simulation)
 Otis wants it to feel like an arcade racer, not a realistic one.
-- The car drives itself forward. The thumb only steers (slide sideways) and brakes (pull down).
+- The car drives itself forward. There are no brakes. The thumb steers with the wheel at the bottom of the screen (input.js): it turns like an iPod click wheel from wherever the thumb lands, a quarter turn (95°) is full lock, and it springs back to the centre on release.
 - Steering turns the nose at a steady rate at any speed. The car's travel swings round to follow the nose, limited by the surface's grip, so a hard turn becomes a power slide. The slide is capped at about 55°, so the car never spins.
 - Drift boost: sliding more than about 15° charges it (0.5 s gives a boost, 1.2 s a super boost). It fires when the car straightens up. Hitting a tree or bumping a bale hard cancels the charge.
 - Hay bales on the outside of bends bounce you back with little speed lost. Trees are the only hard stops, and they stand well back from the road.

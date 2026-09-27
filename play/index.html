@@ -35,12 +35,32 @@
   <div><b id="noteT">Left 3</b><small id="noteN"></small></div>
 </div>
 
-<div id="speedo" hidden><b id="kmh">0</b><small>km/h</small></div>
+<div id="wheelWrap" hidden aria-hidden="true">
+  <svg id="wheel" viewBox="0 0 400 250">
+    <!-- the fixed pointer: when the wheel's notch sits under it, you're going straight -->
+    <path d="M187 0 H213 L200 17 Z" fill="#000"/>
+    <g id="wrot" style="transform-origin:200px 230px">
+      <circle cx="200" cy="230" r="184" fill="none" stroke="#000" stroke-width="34"/>
+      <circle cx="200" cy="230" r="184" fill="none" stroke="#fff" stroke-width="25"/>
+      <circle cx="200" cy="230" r="184" fill="none" stroke="#000" stroke-width="11" stroke-dasharray="2.5 17" stroke-linecap="round" opacity=".55"/>
+      <path d="M26 230 H146 M254 230 H374 M200 176 V62" stroke="#000" stroke-width="30" stroke-linecap="round"/>
+      <path d="M26 230 H146 M254 230 H374 M200 176 V62" stroke="#fff" stroke-width="21" stroke-linecap="round"/>
+      <path d="M44 230 H140 M260 230 H356" stroke="#000" stroke-width="2.4" stroke-dasharray="1 9" stroke-linecap="round"/>
+      <!-- the centre notch, on top of the rim -->
+      <rect x="186" y="26" width="28" height="42" rx="7" fill="#000"/>
+      <rect x="197" y="33" width="6" height="28" rx="3" fill="#fff"/>
+      <circle cx="200" cy="230" r="62" fill="#fff" stroke="#000" stroke-width="5"/>
+      <circle cx="200" cy="230" r="50" fill="none" stroke="#000" stroke-width="1.6" stroke-dasharray="2 5"/>
+    </g>
+    <text id="wkmh" x="200" y="210" text-anchor="middle">0</text>
+    <text x="200" y="229" text-anchor="middle" class="wu">km/h</text>
+  </svg>
+</div>
 <button id="pause" type="button" aria-label="Pause" hidden>
   <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="9" y="8" width="5" height="16" rx="1.5" fill="currentColor"/><rect x="18" y="8" width="5" height="16" rx="1.5" fill="currentColor"/></svg>
 </button>
 <button id="rescue" type="button" hidden>Back on the road</button>
-<div id="hint" hidden><span id="hintT">Hold anywhere to go</span></div>
+<div id="hint" hidden><span id="hintT">Turn the wheel to steer</span></div>
 
 <div id="toast" hidden role="status" aria-live="polite"><b id="toastT"></b><small id="toastS"></small></div>
 <div id="callout"></div>

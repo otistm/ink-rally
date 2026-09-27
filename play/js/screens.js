@@ -38,7 +38,7 @@ function showHome(){
   openCard(`<h2 class="logo">Ink Rally</h2><p>Drive fast. Stay on the road. Get trophies.</p>
     <button class="shopbtn" id="toGarage"><canvas></canvas><span><b>Garage</b><small>${car.name} · upgrade and paint</small></span><span class="wal"><i class="coin" aria-hidden="true"></i>${GARAGE.coins.toLocaleString()}</span></button>
     <div class="events">${rows}</div>
-    <div class="how"><b>How to drive.</b> Your car goes by itself. Slide your thumb left or right to steer, and pull it down to brake.<br>
+    <div class="how"><b>How to drive.</b> Your car goes by itself. Put your thumb on the wheel at the bottom and turn it left or right to steer. Let go and it straightens up.<br>
     Turn hard and the car slides. Hold the slide through a bend, then straighten up for a <b>boost</b>.<br>
     Your co-driver calls each bend before you reach it. The number is how fast it is: <b>1</b> is a crawl, <b>6</b> is nearly flat out.</div>
     <button class="fbc${voiceOn?' on':''}" id="voiceBtn" aria-pressed="${voiceOn}">Co-driver voice: ${voiceOn?'on':'off'}</button>
