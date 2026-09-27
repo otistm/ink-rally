@@ -8,7 +8,7 @@ function fmt(t){ if(!isFinite(t)) return '–'; const m=Math.floor(t/60), s=t-m*
 function fmtDiff(d){ return (d<0?'−':'+')+Math.abs(d).toFixed(1)+'s'; }
 function hudShow(on){ ['top','pause'].forEach(id=>$(id).hidden=!on); wheelShow(on); if(!on){ $('note').hidden=true; $('rescue').hidden=true; $('hint').hidden=true; } }
 function hudStage(){ const st=S.stage, b=bestFor(st.def.id);
-  $('hn').textContent=st.def.name; $('hsub').textContent=st.def.place;
+  $('hn').textContent=st.def.name; $('hn').classList.toggle('long',st.def.name.length>11); $('hsub').textContent=st.def.place;
   $('best').textContent=b?'Best '+fmt(b.t):'No best yet';
   $('tk1').style.left=(100/3)+'%'; $('tk2').style.left=(200/3)+'%'; }
 let lastClock='';

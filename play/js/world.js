@@ -44,16 +44,17 @@ function buildScenery(st){
   st.notes.filter(n=>n.g<=2).forEach(n=>{ const side=n.dir==='R'?-1:1;
     [.3,.6].forEach(u=>{ const p=at(n.s+(n.end-n.s)*u), d=p.w/2+4.6; signs.push({x:p.x+p.nx*side*d,y:p.y+p.ny*side*d,a:p.a,dir:n.dir,z:0,vx:0,vy:0,vz:0,spin:0,hit:false}); }); });
   // trees: a close row along the road and a looser wood behind it
-  const dens=def.trees==='pine'?.5:.3;
+  // boulders on the moor are sparser but solid right to their edge; a tree's canopy overhangs its trunk
+  const rock=def.trees==='rock', dens=def.trees==='pine'?.5:rock?.22:.3;
   for(let i=0;i<P.length;i+=2){ const p=P[i];
     for(const side of [-1,1]){
       const bands=[[8,26,dens],[28,70,dens*.7]];
       for(const [a,b,pr] of bands){ if(r()>pr) continue;
-        const tr=2.2+r()*2.8, d=p.w/2+a+r()*(b-a), x=p.x+p.nx*side*d+(r()-.5)*4, y=p.y+p.ny*side*d+(r()-.5)*4;
+        const tr=rock?1.4+r()*2.4:2.2+r()*2.8, d=p.w/2+a+r()*(b-a), x=p.x+p.nx*side*d+(r()-.5)*4, y=p.y+p.ny*side*d+(r()-.5)*4;
         if(!clearOfRoad(st,x,y,7+tr*.5)) continue;
         if(bales.some(b=>Math.hypot(b.x-x,b.y-y)<tr+2)) continue;
         if(crowd.some(c=>Math.hypot(c.x-x,c.y-y)<tr+3)) continue;
-        trees.push({x,y,r:tr,ph:r()*TAU}); } } }
+        trees.push({x,y,r:tr,ph:r()*TAU,solid:rock?.85:.42}); } } }
   signs.forEach(s=>s.home={x:s.x,y:s.y,a:s.a,z:0,vx:0,vy:0,vz:0,spin:0});
   const sc={trees,crowd,signs,tapes,bales,tgrid:gridOf(trees,20),bgrid:gridOf(bales,20)};
   return sc;

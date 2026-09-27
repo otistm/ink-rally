@@ -44,5 +44,5 @@ function frame(now){
 /* boot */
 addEventListener('resize',resize);
 resize();
-showHome();
+if(meta.name) showHome(); else showName(false);
 requestAnimationFrame(frame);

@@ -14,6 +14,7 @@ function startStage(id){
   S.markI=0; lastClock='';
   PERF=perfFor(GARAGE.car);
   S.run=newRun(def.id); S.achT=0; S.newAch=[]; S.picks=[]; S.chosen=[]; S.fin=null;
+  recReset(); loadBoard(def); // friends' ghosts appear as soon as they've loaded
   cam.x=p.x+Math.cos(p.a)*20; cam.y=p.y+Math.sin(p.a)*20; cam.z=5; cam.rot=-Math.PI/2-p.a;
   closeCard(); hudShow(true); hudStage(); IN.reset(); hush();
   $('note').hidden=true; hint('Turn the wheel to steer');
@@ -52,7 +53,7 @@ function flowStep(dt){
     if(S.count<=0){ S.st='drive'; callout('Go!'); sfx('go'); hint(IN.down?null:'Turn the wheel to steer'); }
     return;
   }
-  if(S.st==='drive') S.race+=dt;
+  if(S.st==='drive'){ S.race+=dt; recStep(); }
   if(S.st==='drive'&&(S.achT+=dt)>.25){ S.achT=0; checkAch(); }
   // co-driver: call the next bend a couple of seconds before you reach it
   const callD=45+Math.max(0,c.vf)*1.8;
@@ -62,7 +63,7 @@ function flowStep(dt){
   if(S.splitI<2&&c.s>=st.splits[S.splitI]){ const t=S.race, b=bestFor(st.def.id), k=S.splitI++; S.splitT.push(t);
     const bt=b&&b.splits&&b.splits[k]; callout(`Split ${k+1}`,bt?fmtDiff(t-bt):fmt(t)); sfx('split'); }
   // finish
-  if(S.st==='drive'&&c.s>=st.finish){ S.st='finish'; S.finT=S.race; bankRun(); S.finTimer=0; callout('Finish!',fmt(S.finT)); sfx('finish'); say('Stage end. '+Math.floor(S.finT)+' seconds',true); $('note').hidden=true; $('rescue').hidden=true; hint(null); }
+  if(S.st==='drive'&&c.s>=st.finish){ S.st='finish'; S.finT=S.race; recStep(); bankRun(); saveRun(); S.finTimer=0; callout('Finish!',fmt(S.finT)); sfx('finish'); say('Stage end. '+Math.floor(S.finT)+' seconds',true); $('note').hidden=true; $('rescue').hidden=true; hint(null); }
   if(S.st==='finish'){ S.finTimer+=dt; if(S.finTimer>2.2&&$('card').hidden) showFinish(); return; }
   // wrong way and rescue
   const p=c.i<st.pts.length?st.pts[c.i]:st.pts[st.pts.length-1], fwd=(c.vx*Math.cos(p.a)+c.vy*Math.sin(p.a));

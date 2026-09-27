@@ -93,7 +93,7 @@ function collide(c){
       const vn=c.vx*nx+c.vy*ny; if(vn>=0) return;
       c.vx-=1.35*vn*nx; c.vy-=1.35*vn*ny; c.vx*=.97; c.vy*=.97; touched(); if(-vn>7) hitStop(c);
       const hit=-vn; b.hit=.4; if(hit>2){ S.shake+=Math.min(8,hit*.6); sfx('bump',Math.min(1,hit/12)); for(let i=0;i<Math.min(6,hit*.5);i++) bit(b.x,b.y,c.vx*.3,c.vy*.3,'straw'); } });
-    near(sc.tgrid,qx,qy,k=>{ const t=sc.trees[k], dx=qx-t.x, dy=qy-t.y, d=Math.hypot(dx,dy), min=t.r*.42+1.05;
+    near(sc.tgrid,qx,qy,k=>{ const t=sc.trees[k], dx=qx-t.x, dy=qy-t.y, d=Math.hypot(dx,dy), min=t.r*t.solid+1.05;
       if(d>=min||d<1e-4) return; const nx=dx/d, ny=dy/d; c.x+=nx*(min-d); c.y+=ny*(min-d);
       const vn=c.vx*nx+c.vy*ny; if(vn>=0) return;
       c.vx-=1.3*vn*nx; c.vy-=1.3*vn*ny; c.vx*=.6; c.vy*=.6; c.w=c.w*.3+(Math.random()-.5)*Math.min(3,-vn*.2); hitStop(c); touched();

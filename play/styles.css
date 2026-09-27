@@ -19,7 +19,8 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:
 #top{position:fixed;top:0;left:0;right:0;z-index:5;pointer-events:none;
   padding:calc(env(safe-area-inset-top,0px) + 10px) 16px 14px;background:linear-gradient(to bottom,#fff 72%,rgba(255,255,255,0));
   display:grid;grid-template-columns:1fr auto;align-items:start;gap:4px 8px}
-.hn{font-family:var(--display);font-weight:800;font-size:28px;line-height:1;letter-spacing:-.01em}
+.hn{font-family:var(--display);font-weight:800;font-size:28px;line-height:1;letter-spacing:-.01em;white-space:nowrap}
+.hn.long{font-size:21px}
 .hn,.sub,.pv{text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 6px #fff}
 .sub{font-size:13px;font-weight:700;color:var(--soft);margin-top:4px;line-height:1.25}
 .pts{text-align:right;min-width:92px;margin-right:48px}
@@ -237,3 +238,25 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:
 .lvb.nope{animation:nope .3s}
 @media (prefers-reduced-motion: reduce){ .pick,.won{animation:none} }
 .panel.still,.panel.still .award .troph,.panel.still .board .row,.panel.still .won{animation:none}
+
+/* name, group and online status, as in Ink Nine */
+.nameform{display:grid;gap:8px;text-align:left;margin-top:6px}
+.nameform label{font-size:12px;font-weight:800}
+#nameIn{font:800 22px var(--display);font-style:italic;border:2.5px solid var(--ink);border-radius:14px;padding:12px 14px;background:var(--paper);color:var(--ink);width:100%;-webkit-user-select:text;user-select:text}
+#nameIn:focus{outline:3px solid var(--ink);outline-offset:2px}
+#nameIn.nope{animation:nope .3s}
+.grpin{font:700 16px var(--ui);border:2px solid var(--ink);border-radius:12px;padding:10px 12px;background:var(--paper);color:var(--ink);width:100%;-webkit-user-select:text;user-select:text}
+.grpin:focus{outline:3px solid var(--ink);outline-offset:2px}
+.nhelp{font-size:11.5px;font-weight:600;color:var(--soft);line-height:1.35;margin-top:-2px}
+.nerr{min-height:1.1em;margin:0 !important;font-size:12.5px !important;font-weight:700 !important;color:var(--ink) !important}
+.asname{margin:10px 0 0 !important;font-size:13px !important}
+.asname b{color:var(--ink)}
+.linkbtn{appearance:none;border:0;background:none;padding:2px 4px;font:inherit;font-weight:800;color:var(--ink);text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.linkbtn:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.netline{font-size:12px !important;font-weight:700 !important;color:var(--ink) !important;margin:6px 0 0 !important;line-height:1.35;text-align:left}
+.netline:empty{display:none}
+.netline.bad{border:1.5px dashed var(--ink);border-radius:10px;padding:6px 8px}
+.board .nm small{display:block;font-weight:600;font-size:11px;opacity:.7}
+.board .row.fr .nm{text-decoration:underline;text-decoration-style:dotted;text-underline-offset:3px}
+#lboard{margin-bottom:16px}
+#lboard .board{margin-bottom:6px}
