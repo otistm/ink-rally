@@ -4,13 +4,14 @@
    LOOP
    ============================================================ */
 let lastT=performance.now(), acc=0;
+// pixels per metre: the same at every speed, scaled up a little on bigger screens
+function camZoom(){ return 6.6*clamp(Math.min(W,Hh*.6)/390,.8,1.6); }
 function camStep(dt){
   const c=S.car, sp=Math.hypot(c.vx,c.vy);
   // look along where the car is going, not where its nose points, so slides don't spin the world
   const dir=sp>4?Math.atan2(c.vy,c.vx):c.a, rotT=-Math.PI/2-dir;
   cam.rot+=angDiff(cam.rot,rotT)*(1-Math.exp(-dt*(S.st==='count'?8:3.2)));
-  const scale=clamp(Math.min(W,Hh*.6)/390,.8,1.6), zT=(8.2-Math.min(52,sp)*.068)*scale;
-  cam.z+=(zT-cam.z)*(1-Math.exp(-dt*1.6));
+  cam.z=camZoom(); // a steady zoom, so the car stays the same size on screen at any speed
   const lead=.12, tx=c.rx+c.vx*lead, ty=c.ry+c.vy*lead, k=1-Math.exp(-dt*9);
   cam.x+=(tx-cam.x)*k; cam.y+=(ty-cam.y)*k;
   S.shake*=Math.exp(-dt*8); const sk=S.shake*(RM?.15:1); shakeOff.x=(Math.random()-.5)*sk; shakeOff.y=(Math.random()-.5)*sk;

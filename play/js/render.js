@@ -33,7 +33,9 @@ function makePatterns(){
 function resize(){
   DPR=Math.min(2,window.devicePixelRatio||1); W=innerWidth; Hh=innerHeight;
   cv.width=Math.round(W*DPR); cv.height=Math.round(Hh*DPR);
-  cam.ax=W/2; cam.ay=Hh*.46; // above the wheel makePatterns();
+  // the car sits a little below the middle: clear of the co-driver card and the wheel, with plenty of road ahead
+  cam.ax=W/2; cam.ay=Hh*.55;
+  makePatterns();
 }
 const shakeOff={x:0,y:0};
 // draw in world metres from here on; line widths must be divided by cam.z to stay the same on screen
