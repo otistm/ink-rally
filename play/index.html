@@ -24,6 +24,7 @@
   <div>
     <div class="hn" id="hn">Pinewood</div>
     <div class="sub" id="hsub">Gravel</div>
+    <div class="hcoins" id="hcoins"><i class="coin" aria-hidden="true"></i><b id="ccount">0</b><span class="sr">coins</span></div>
   </div>
   <div class="pts"><div class="pv" id="clock">0:00.0</div><div class="sub" id="best">No best yet</div></div>
   <div id="prog" aria-hidden="true"><i class="tk" id="tk1"></i><i class="tk" id="tk2"></i><b id="pdot"></b></div>
@@ -41,16 +42,19 @@
 <button id="rescue" type="button" hidden>Back on the road</button>
 <div id="hint" hidden><span id="hintT">Hold anywhere to go</span></div>
 
+<div id="toast" hidden role="status" aria-live="polite"><b id="toastT"></b><small id="toastS"></small></div>
 <div id="callout"></div>
 <div id="card" hidden><div class="panel" id="panel"></div></div>
 <script src="js/config.js"></script>
 <script src="js/engine.js"></script>
 <script src="js/stages.js"></script>
+<script src="js/cars.js"></script>
 <script src="js/render.js"></script>
 <script src="js/world.js"></script>
 <script src="js/audio.js"></script>
 <script src="js/ui.js"></script>
 <script src="js/screens.js"></script>
+<script src="js/garage.js"></script>
 <script src="js/flow.js"></script>
 <script src="js/physics.js"></script>
 <script src="js/input.js"></script>

@@ -34,7 +34,9 @@ function showHome(){
     return `<button class="event" data-id="${def.id}" style="animation-delay:${.1+i*.08}s">
       <div class="tw-wrap">${trophySvg(m,38)}<small>${b?fmt(b.t):'No time'}</small></div>
       <div class="ev"><i>Stage ${i+1} · ${SURF[def.surface].name} · ${(st.length/1000).toFixed(1)} km</i><b>${def.name}</b><span>${def.blurb}</span></div></button>`; }).join('');
+  const car=carDef(GARAGE.car);
   openCard(`<h2 class="logo">Ink Rally</h2><p>Drive fast. Stay on the road. Get trophies.</p>
+    <button class="shopbtn" id="toGarage"><canvas></canvas><span><b>Garage</b><small>${car.name} · upgrade and paint</small></span><span class="wal"><i class="coin" aria-hidden="true"></i>${GARAGE.coins.toLocaleString()}</span></button>
     <div class="events">${rows}</div>
     <div class="how"><b>How to drive.</b> Your car goes by itself. Slide your thumb left or right to steer, and pull it down to brake.<br>
     Turn hard and the car slides. Hold the slide through a bend, then straighten up for a <b>boost</b>.<br>
@@ -42,6 +44,8 @@ function showHome(){
     <button class="fbc${voiceOn?' on':''}" id="voiceBtn" aria-pressed="${voiceOn}">Co-driver voice: ${voiceOn?'on':'off'}</button>
     <p class="ver">Version ${VERSION}</p>`,true);
   document.querySelectorAll('.event').forEach(b=>b.onclick=()=>{ audioInit(); startStage(b.dataset.id); });
+  { const cs=GARAGE.cars[GARAGE.car]; carThumb($('toGarage').querySelector('canvas'),GARAGE.car,cs.livery,cs.number,{ang:-.3,zoom:.9}); }
+  $('toGarage').onclick=()=>{ audioInit(); GV.car=GARAGE.car; GV.tab='up'; showGarage('home'); };
   $('voiceBtn').onclick=()=>{ voiceOn=!voiceOn; meta.voice=voiceOn; store('inkrally-meta',meta); showHome(); if(voiceOn) say('Voice on',true); };
 }
 function showPause(){
@@ -55,7 +59,8 @@ function showPause(){
   $('pRestart').onclick=()=>startStage(S.def.id);
   $('pHome').onclick=showHome;
 }
-function showFinish(){
+function showFinish(again){
+  if(again&&S.finHTML){ openCard(S.finHTML); wireFinish(); return; }
   const st=S.stage, id=st.def.id, t=S.finT, prev=bestFor(id), isBest=!prev||t<prev.t, m=medalFor(st,t), pm=prev?medalFor(st,prev.t):null;
   if(isBest){ const was=bests[id], old=was&&(was.rev||1)!==revOf(id)?was:was&&was.old;
     bests[id]={t,splits:S.splitT.slice(),rev:revOf(id)}; if(old) bests[id].old=old; store('inkrally-bests',bests); }
@@ -64,16 +69,29 @@ function showFinish(){
   const board=rows.map((r,i)=>`<div class="row${r.me?' me':''}" style="animation-delay:${.3+i*.07}s"><span class="pos">${i+1}</span><span class="nm">${r.nm}</span><i></i><b>${fmt(r.t)}</b></div>`).join('');
   const i=STAGES.findIndex(d=>d.id===id), next=STAGES[i+1];
   const newMedal=m&&(!pm||['gold','silver','bronze'].indexOf(m)<['gold','silver','bronze'].indexOf(pm));
-  openCard(`<h2>${isBest&&prev?'New best!':'Stage clear'}</h2><p>${st.def.name}</p>
+  const B=S.banked||{coins:0,bonus:0,of:0}, achPay=S.newAch.reduce((a,x)=>a+x.reward,0);
+  const earn=`<div class="earn"><div><span>Coins picked up</span><span>${B.coins} of ${B.of}</span></div>
+    ${B.bonus?`<div><span>${MEDAL[m]} bonus</span><span>+${B.bonus}</span></div>`:''}
+    ${S.newAch.map(a=>`<div class="ach"><span>Achievement: ${a.name}</span><span>+${a.reward}</span></div>`).join('')}
+    <div class="tot"><span>Earned</span><span><i class="coin" aria-hidden="true"></i>+${B.coins+B.bonus+achPay}</span></div>
+    <div><span>In your garage</span><span>${GARAGE.coins.toLocaleString()}</span></div></div>`;
+  S.finHTML=`<h2>${isBest&&prev?'New best!':'Stage clear'}</h2><p>${st.def.name}</p>
     <div class="big">${fmt(t)}</div>
     <p class="nxt">${prev?(isBest?`${fmtDiff(t-prev.t)} on your best`:`Your best is ${fmt(prev.t)} (${fmtDiff(t-prev.t)})`):'First time through'}</p>
     ${m?`<div class="award">${trophySvg(m,64)}<p>${MEDAL[m]}${newMedal?'!':''}</p></div>`:`<p class="perk">Beat ${fmt(st.medals.bronze)} for a trophy.</p>`}
+    ${earn}
     <div class="board">${board}</div>
     <button class="btn" id="fAgain">Drive it again</button>
+    <button class="btn ghost" id="fGarage">Garage</button>
     ${next?`<button class="btn ghost" id="fNext">Next stage: ${next.name}</button>`:''}
-    <button class="btn ghost" id="fHome">Stages</button>`);
+    <button class="btn ghost" id="fHome">Stages</button>`;
+  openCard(S.finHTML); wireFinish();
+  if(m) setTimeout(()=>sfx('finish'),250);
+}
+function wireFinish(){
+  const id=S.stage.def.id, i=STAGES.findIndex(d=>d.id===id), next=STAGES[i+1];
   $('fAgain').onclick=()=>startStage(id);
+  $('fGarage').onclick=()=>{ GV.car=GARAGE.car; GV.tab='up'; showGarage('finish'); };
   if(next) $('fNext').onclick=()=>startStage(next.id);
   $('fHome').onclick=showHome;
-  if(m) setTimeout(()=>sfx('finish'),250);
 }

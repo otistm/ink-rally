@@ -27,24 +27,27 @@ function carStep(dt){
   let spd=(c.vx*f0+c.vy*f1)<-.3?-sp:sp;
   let vdir=sp>.5?Math.atan2(c.vy,c.vx):c.a; if(spd<0) vdir+=Math.PI;
   // steering turns the nose at a steady rate: gentle when crawling, full from about 30 km/h
-  const turn=CAR.turn*clamp(Math.abs(spd)/9,.15,1)*(1-Math.min(.2,Math.abs(spd)/240))*(air?.5:1);
+  const turn=CAR.turn*PERF.turn*clamp(Math.abs(spd)/9,.15,1)*(1-Math.min(.2,Math.abs(spd)/240))*(air?.5:1);
   c.w+=(c.steer*turn*(spd<0?-1:1)-c.w)*Math.min(1,dt*10);
   c.a+=c.w*dt;
   if(!air){
-    const boost=c.boost>0, top=CAR.vmax*sf.top*(boost?1.15:1);
-    if(gas){ if(spd>=-.5) spd+=(CAR.accel*sf.trac*Math.max(0,1-spd/top)+(boost?9:0))*dt; else spd=Math.min(0,spd+CAR.brake*dt); }
+    const boost=c.boost>0, top=CAR.vmax*PERF.top*sf.top*(boost?1+.15*PERF.boostPow:1);
+    if(gas){ if(spd>=-.5) spd+=(CAR.accel*PERF.accel*sf.trac*Math.max(0,1-spd/top)+(boost?9*PERF.boostPow:0))*dt; else spd=Math.min(0,spd+CAR.brake*dt); }
     if(brk>0){ if(spd>.3) spd=Math.max(0,spd-CAR.brake*sf.trac*brk*dt); else if(driving) spd=Math.max(-CAR.reverse,spd-5*brk*dt); }
     if(spd>top) spd-=(spd-top)*dt*1.5;
     const drag=((.4+sf.drag)*dt+.0003*spd*spd*dt)*Math.sign(spd); spd=Math.abs(drag)>=Math.abs(spd)?0:spd-drag;
     if(spd<1.5){ vdir=c.a+(spd<0?Math.PI:0); c.drift=0; }
     else {
       // the travel swings round toward the nose, as hard as the surface allows; the rest is a slide
-      let b=angDiff(vdir,c.a); const most=sf.lat/spd;
-      vdir+=clamp(b*sf.k,-most,most)*dt;
+      let b=angDiff(vdir,c.a); const most=sf.lat*(sf.loose?PERF.loose:PERF.grip)/spd;
+      vdir+=clamp(b*sf.k*PERF.k,-most,most)*dt;
       b=angDiff(vdir,c.a); if(Math.abs(b)>MAXSLIDE){ vdir=c.a-Math.sign(b)*MAXSLIDE; b=Math.sign(b)*MAXSLIDE; }
       spd-=sf.scrub*Math.abs(Math.sin(b))*spd*dt;
       c.drift=b;
     }
+    // the run's record, for achievements
+    const R=S.run; if(R){ R.maxKmh=Math.max(R.maxKmh,Math.abs(spd)*3.6);
+      if(Math.abs(c.drift||0)>.26&&Math.abs(spd)>8){ c.slideT=(c.slideT||0)+dt; R.longSlide=Math.max(R.longSlide,c.slideT); } else c.slideT=0; }
     c.vx=Math.cos(vdir)*Math.abs(spd); c.vy=Math.sin(vdir)*Math.abs(spd);
   } else { const k=1-.0003*sp*dt; c.vx*=k; c.vy*=k; }
   c.vf=c.vx*Math.cos(c.a)+c.vy*Math.sin(c.a); c.vl=-c.vx*Math.sin(c.a)+c.vy*Math.cos(c.a); c.slip=air?0:Math.abs(c.vl);
@@ -55,13 +58,15 @@ function carStep(dt){
   // flying and landing
   if(c.z>0||c.vz>0){ c.vz-=GRAV*dt; c.z+=c.vz*dt;
     if(c.z<=0){ const hit=-c.vz; c.z=0; c.vz=0;
+      if(c.takeoff&&S.run){ const L=Math.hypot(c.x-c.takeoff[0],c.y-c.takeoff[1]); S.run.longJump=Math.max(S.run.longJump,L); if(L>8) S.run.landings++; c.takeoff=null; }
       if(hit>1.5){ S.sq=Math.min(.4,hit*.06); S.sqv=0; S.shake+=Math.min(14,hit*1.6); sfx('land',Math.min(1,hit/6)); for(let k=0;k<10;k++) puff(c,true); } } }
   // crests and jumps
   while(S.markI<st.marks.length&&st.marks[S.markI].s<=c.s){ const m=st.marks[S.markI++]; if(c.z>0) continue;
-    if(m.k==='jump'&&c.vf>8){ c.vz=Math.min(9,c.vf*.19); c.z=.03; S.sq=-.25; }
-    else if(m.k==='crest'&&c.vf>20){ c.vz=(c.vf-20)*.22; c.z=.03; } }
+    if(m.k==='jump'&&c.vf>8){ c.vz=Math.min(9,c.vf*.19)*PERF.jump; c.z=.03; S.sq=-.25; c.takeoff=[c.x,c.y]; }
+    else if(m.k==='crest'&&c.vf>20){ c.vz=(c.vf-20)*.22*PERF.jump; c.z=.03; c.takeoff=[c.x,c.y]; } }
   if(S.markI>0&&st.marks[S.markI-1].s>c.s+5) S.markI--;
   collide(c);
+  collectCoins(c);
   trails(c,dt);
 }
 /* Drift boost: slide for a moment and the charge builds (sparks fly from the back wheels);
@@ -69,15 +74,16 @@ function carStep(dt){
 function driftBoost(c,dt,air){
   if(c.boost>0) c.boost-=dt;
   const d=Math.abs(c.drift||0), sp=Math.abs(c.vf);
-  if(!air&&sp>8&&d>.26&&c.surf!=='grass'&&S.st==='drive'){ const was=c.charge||0; c.charge=Math.min(2,was+dt);
+  if(!air&&sp>8&&d>.26&&c.surf!=='grass'&&S.st==='drive'){ const was=c.charge||0; c.charge=Math.min(2,was+dt*PERF.charge);
     if(was<.5&&c.charge>=.5) sfx('charge',1); if(was<1.2&&c.charge>=1.2) sfx('charge',2); }
   else if(d<.16||sp<8){
-    if(c.charge>=.5&&S.st==='drive'){ const big=c.charge>=1.2; c.boost=big?1.3:.8; S.shake+=big?5:3; sfx('boost',big?1:.7);
+    if(c.charge>=.5&&S.st==='drive'){ const big=c.charge>=1.2; c.boost=(big?1.3:.8)*PERF.boostDur; if(S.run){ S.run.boosts++; if(big) S.run.supers++; } S.shake+=big?5:3; sfx('boost',big?1:.7);
       label(c,big?'Super boost!':'Boost!',big); for(let k=0;k<(big?8:5);k++) puff(c,true); }
     c.charge=0; }
 }
 function label(c,text,big){ S.parts.push({k:'label',x:c.x,y:c.y,text,big,t:0,life:1.1}); }
 function hitStop(c){ c.charge=0; }
+function touched(){ if(S.run&&S.st==='drive') S.run.touches++; }
 function collide(c){
   const sc=S.scene, f0=Math.cos(c.a), f1=Math.sin(c.a);
   if(c.z>2) return;
@@ -86,18 +92,29 @@ function collide(c){
     near(sc.bgrid,qx,qy,k=>{ const b=sc.bales[k], dx=qx-b.x, dy=qy-b.y, d=Math.hypot(dx,dy), min=b.r+1;
       if(d>=min||d<1e-4) return; const nx=dx/d, ny=dy/d; c.x+=nx*(min-d); c.y+=ny*(min-d);
       const vn=c.vx*nx+c.vy*ny; if(vn>=0) return;
-      c.vx-=1.35*vn*nx; c.vy-=1.35*vn*ny; c.vx*=.97; c.vy*=.97; if(-vn>7) hitStop(c);
+      c.vx-=1.35*vn*nx; c.vy-=1.35*vn*ny; c.vx*=.97; c.vy*=.97; touched(); if(-vn>7) hitStop(c);
       const hit=-vn; b.hit=.4; if(hit>2){ S.shake+=Math.min(8,hit*.6); sfx('bump',Math.min(1,hit/12)); for(let i=0;i<Math.min(6,hit*.5);i++) bit(b.x,b.y,c.vx*.3,c.vy*.3,'straw'); } });
     near(sc.tgrid,qx,qy,k=>{ const t=sc.trees[k], dx=qx-t.x, dy=qy-t.y, d=Math.hypot(dx,dy), min=t.r*.42+1.05;
       if(d>=min||d<1e-4) return; const nx=dx/d, ny=dy/d; c.x+=nx*(min-d); c.y+=ny*(min-d);
       const vn=c.vx*nx+c.vy*ny; if(vn>=0) return;
-      c.vx-=1.3*vn*nx; c.vy-=1.3*vn*ny; c.vx*=.6; c.vy*=.6; c.w=c.w*.3+(Math.random()-.5)*Math.min(3,-vn*.2); hitStop(c);
+      c.vx-=1.3*vn*nx; c.vy-=1.3*vn*ny; c.vx*=.6; c.vy*=.6; c.w=c.w*.3+(Math.random()-.5)*Math.min(3,-vn*.2); hitStop(c); touched();
       const hit=-vn; S.shake+=Math.min(18,hit*1.4); S.sq=Math.min(.3,hit*.03); sfx('crash',Math.min(1,hit/15));
       t.hit=.5; for(let i=0;i<Math.min(14,4+hit);i++) bit(t.x+nx*t.r*.4,t.y+ny*t.r*.4,c.vx*.3,c.vy*.3,'leaf'); });
   }
   sc.signs.forEach(s=>{ if(s.hit) return; if(Math.hypot(s.x-c.x,s.y-c.y)>2.6) return;
     s.hit=true; s.vx=c.vx*.9+(Math.random()-.5)*4; s.vy=c.vy*.9+(Math.random()-.5)*4; s.vz=4+Math.abs(c.vf)*.15; s.spin=(Math.random()<.5?-1:1)*(6+Math.random()*6);
     c.vx*=.97; c.vy*=.97; S.shake+=3; sfx('crash',.35); for(let i=0;i<5;i++) bit(s.x,s.y,c.vx*.4,c.vy*.4,'chip'); });
+}
+/* Coins: drive through them on the road, or catch them in the air over the jumps. Big coins are worth 5. */
+function collectCoins(c){
+  const sc=S.scene; if(!sc.coins) return;
+  const f0=Math.cos(c.a), f1=Math.sin(c.a);
+  for(const u of [1.4,0,-1.4]){ const qx=c.x+f0*u, qy=c.y+f1*u;
+    near(sc.cgrid,qx,qy,k=>{ const o=sc.coins[k]; if(o.got) return;
+      if(Math.hypot(o.x-qx,o.y-qy)>(o.big?2.8:2.3)||Math.abs(c.z-o.z)>2) return;
+      o.got=true; o.gotT=0; const v=o.big?5:1; S.runCoins+=v; if(S.run) S.run.coins+=v;
+      S.coinChain=(S.coinT<.5?S.coinChain+1:0); S.coinT=0; sfx('coin',Math.min(12,S.coinChain)); if(o.big){ sfx('bigcoin'); label(c,'+5',false); } coinHUD(); });
+  }
 }
 // tyre marks and dust
 function trails(c,dt){
@@ -133,4 +150,5 @@ function partsStep(dt){
     if(s.z===0){ s.vx*=Math.exp(-dt*5); s.vy*=Math.exp(-dt*5); s.spin*=Math.exp(-dt*5); s.vz=s.vz<-2?-s.vz*.3:0; } });
   S.scene.trees.forEach(t=>{ if(t.hit) t.hit=Math.max(0,t.hit-dt); });
   S.scene.bales.forEach(b=>{ if(b.hit) b.hit=Math.max(0,b.hit-dt); });
+  S.scene.coins.forEach(o=>{ if(o.got&&o.gotT<1) o.gotT+=dt; });
 }
