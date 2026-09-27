@@ -27,7 +27,7 @@ function inputUpdate(dt){
   IN.gas=true; IN.brake=0;
   const g=$('wrot'); if(g) g.style.transform=`rotate(${(WH.ang*180/Math.PI).toFixed(2)}deg)`;
   // the white knob sits on the rim where the thumb grabbed it and turns with the wheel
-  const kn=$('knob'); if(kn){ if(p){ const a=p.grab+(WH.ang-p.start); kn.style.transform=`translate(${(200+Math.cos(a)*184).toFixed(1)}px,${(230+Math.sin(a)*184).toFixed(1)}px)`; } kn.classList.toggle('on',!!p); }
+  const kn=$('knob'); if(kn){ if(p){ const a=p.grab+(WH.ang-p.start); kn.style.transform=`translate(${(200+Math.cos(a)*176).toFixed(1)}px,${(230+Math.sin(a)*176).toFixed(1)}px)`; } kn.classList.toggle('on',!!p); }
 }
 function wheelShow(on){ const w=$('wheelWrap'); w.hidden=!on; if(on){ w.classList.remove('in'); void w.offsetWidth; w.classList.add('in'); } }
 cv.addEventListener('pointerdown',e=>{

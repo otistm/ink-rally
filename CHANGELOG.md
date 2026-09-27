@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.5.3
+- The steering wheel ring is about half as thick again, with a bigger thumb circle and notch to match.
+
 ## 0.5.2
 - Steering is snappier. The car reacts to the wheel about twice as fast, full lock is about 70° of wheel instead of 95°, and small turns near the centre do more.
 - Fixed: after a hiccup on the phone (a notification, a slow moment), the game could stall while it caught up. It now picks straight back up.
