@@ -2,6 +2,7 @@
 
 ## 0.7.2
 - The "Online in group…" line on the stages screen moved below the stages, just above the co-driver voice button.
+- The Garage button moved below the stages.
 
 ## 0.7.1
 - The "How to drive" box is gone from the stages screen.
