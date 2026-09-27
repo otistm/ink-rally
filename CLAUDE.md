@@ -41,7 +41,7 @@ Otis wants it to feel like an arcade racer, not a realistic one.
 - Steering turns the nose at a steady rate at any speed. The car's travel swings round to follow the nose, limited by the surface's grip, so a hard turn becomes a power slide. The slide is capped at about 55°, so the car never spins.
 - Drift boost: sliding more than about 15° charges it (0.5 s gives a boost, 1.2 s a super boost). It fires when the car straightens up. Hitting a tree or bumping a bale hard cancels the charge.
 - Hay bales on the outside of bends bounce you back with little speed lost. Trees are the only hard stops, and they stand well back from the road.
-- The camera keeps the car in the middle of the screen, away from the thumb.
+- The camera zoom is fixed (`camZoom` in main.js), so the car stays the same size on screen at every speed. The car sits a little below the middle (`cam.ay` in render.js), clear of the co-driver card and the wheel.
 
 ## Rewards, cars and the garage
 - There are no coins or achievements. Like Ink Nine's reward cards: a podium finish earns a pick at the finish (`PICKS` in cars.js: 1st chooses from 3 cards, 2nd from 2, 3rd takes 1).

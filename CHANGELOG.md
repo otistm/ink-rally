@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.7.3
+- The car stays the same size on screen at every speed. The camera no longer pulls back as you speed up, the car is drawn a little larger, and it sits slightly lower on screen so you still see plenty of road ahead.
+- Fixed: the ground textures (grass tufts, gravel stipple, snow speckle and hatched snowbanks) had gone missing since the steering wheel arrived in 0.5.0. They're back.
+
 ## 0.7.2
 - The "Online in group…" line on the stages screen moved below the stages, just above the co-driver voice button.
 - The Garage button moved below the stages.

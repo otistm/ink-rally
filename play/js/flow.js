@@ -15,7 +15,7 @@ function startStage(id){
   PERF=perfFor(GARAGE.car);
   S.run={stage:def.id,car:GARAGE.car,medal:null}; S.picks=[]; S.chosen=[]; S.fin=null;
   recReset(); loadBoard(def); // friends' ghosts appear as soon as they've loaded
-  cam.x=p.x+Math.cos(p.a)*20; cam.y=p.y+Math.sin(p.a)*20; cam.z=5; cam.rot=-Math.PI/2-p.a;
+  cam.x=p.x+Math.cos(p.a)*20; cam.y=p.y+Math.sin(p.a)*20; cam.z=camZoom(); cam.rot=-Math.PI/2-p.a;
   closeCard(); hudShow(true); hudStage(); IN.reset(); hush();
   $('note').hidden=true; hint('Turn the wheel to steer');
   say(`${def.name}. Stage start.`,true);
