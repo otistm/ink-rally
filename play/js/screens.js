@@ -64,7 +64,7 @@ function showPause(){
   $('pRestart').onclick=()=>startStage(S.def.id);
   $('pHome').onclick=showHome;
 }
-/* The finish card. A podium place (and each achievement) earns a reward pick, chosen from cards like Ink Nine's.
+/* The finish card. A podium place earns a reward pick, chosen from cards like Ink Nine's.
    The buttons to move on appear once every pick is made, so a reward is never skipped by accident. */
 function showFinish(again){
   if(!again||!S.fin){

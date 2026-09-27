@@ -1,4 +1,4 @@
-/* Ink Rally: Cars, upgrades, liveries, achievements and reward cards, the saved garage, and each car's performance. */
+/* Ink Rally: Cars, upgrades, liveries and reward cards, the saved garage, and each car's performance. */
 "use strict";
 /* ============================================================
    CARS
@@ -31,7 +31,7 @@ const UPGRADES=[
   { id:'boost',  name:'Boost',  desc:'Boosts charge faster, last longer and push harder.' }
 ];
 const UPMAX=4;
-// Liveries are ink patterns painted on the body, won from reward cards. A car's signature livery comes from finishing all its achievements.
+// Liveries are ink patterns painted on the body, won from reward cards. A signature livery (sig) belongs to one car and is only offered while driving it.
 const LIVERIES=[
   { id:'plain',   name:'Plain' },
   { id:'stripes', name:'Twin stripes' },
@@ -46,31 +46,14 @@ const LIVERIES=[
   { id:'camo',    name:'Ink camo',     sig:'mudlark' },
   { id:'feather', name:'Feathers',     sig:'quill' }
 ];
-/* Achievements: three per car, earned while driving that car. Each one earns a bonus reward pick at the end of the stage.
-   r is what a run did (see newRun in flow.js). */
-const ACHIEVEMENTS=[
-  { id:'scr_finish', car:'scribble', name:'Off the line',    desc:'Finish any stage.',                         test:r=>r.finished },
-  // (id kept from the old "collect 100 coins" achievement, so saved progress still lines up)
-  { id:'scr_coins',  car:'scribble', name:'Boost buddy',     desc:'Fire 5 boosts in one stage.',              test:r=>r.boosts>=5 },
-  { id:'scr_gold',   car:'scribble', name:'Scribbled gold',  desc:'Win gold on any stage.',                    test:r=>r.medal==='gold' },
-  { id:'gt_speed',   car:'inkwell',  name:'Ton-eighty',      desc:'Hit 180 km/h.',                             test:r=>r.maxKmh>=180 },
-  { id:'gt_clean',   car:'inkwell',  name:'Not a scratch',   desc:'Finish a stage without touching a bale or a tree.', test:r=>r.finished&&r.touches===0 },
-  { id:'gt_chalk',   car:'inkwell',  name:'Chalk champion',  desc:'Win gold on Chalk Hills.',                  test:r=>r.medal==='gold'&&r.stage==='chalk' },
-  { id:'mud_jump',   car:'mudlark',  name:'Air mail',        desc:'Fly 70 m in one jump.',                     test:r=>r.longJump>=70 },
-  { id:'mud_land',   car:'mudlark',  name:'Frequent flyer',  desc:'Land 5 jumps or crests in one stage.',      test:r=>r.landings>=5 },
-  { id:'mud_snow',   car:'mudlark',  name:'Snow plough',     desc:'Win gold on Frostmere.',                    test:r=>r.medal==='gold'&&r.stage==='frostmere' },
-  { id:'q_super',    car:'quill',    name:'Supersonic',      desc:'Get 3 super boosts in one stage.',          test:r=>r.supers>=3 },
-  { id:'q_drift',    car:'quill',    name:'Long way round',  desc:'Hold one slide for 3 seconds.',             test:r=>r.longSlide>=3 },
-  { id:'q_pine',     car:'quill',    name:'Pinewood ace',    desc:'Win gold on Pinewood.',                     test:r=>r.medal==='gold'&&r.stage==='pinewood' }
-];
 // how many reward cards each podium place gets to choose from
 const PICKS={gold:3,silver:2,bronze:1};
 const PLACE={gold:'1st',silver:'2nd',bronze:'3rd'};
 
 /* ============================================================
    SAVED GARAGE (localStorage key inkrally-garage; never rename fields)
-   {v:1, car, cars:{id:{up:{engine,tyres,boost}, livery, number}}, liveries:[ids owned, shared by all cars], ach:{id:true}}
-   A car is owned when it has an entry in cars. coins and total are from the old coin shop: kept, but no longer used.
+   {v:1, car, cars:{id:{up:{engine,tyres,boost}, livery, number}}, liveries:[ids owned; signature ones belong to their car]}
+   A car is owned when it has an entry in cars. coins, total and ach (achievements) are from earlier versions: kept, but no longer used.
    ============================================================ */
 const GARAGE_KEY='inkrally-garage';
 function loadGarage(){
@@ -84,6 +67,9 @@ function loadGarage(){
   if(!Array.isArray(g.liveries)) g.liveries=['plain','stripes'];
   if(!g.ach||typeof g.ach!=='object') g.ach={};
   if(!g.car||!g.cars[g.car]) g.car='scribble';
+  // achievements are gone: anyone who finished all three for a car keeps that car's signature livery
+  const OLD_ACH={scribble:['scr_finish','scr_coins','scr_gold'],inkwell:['gt_speed','gt_clean','gt_chalk'],mudlark:['mud_jump','mud_land','mud_snow'],quill:['q_super','q_drift','q_pine']};
+  Object.keys(OLD_ACH).forEach(id=>{ const L=LIVERIES.find(l=>l.sig===id); if(OLD_ACH[id].every(a=>g.ach[a])&&!g.liveries.includes(L.id)) g.liveries.push(L.id); });
   return g;
 }
 const GARAGE=loadGarage();
@@ -91,8 +77,7 @@ function saveGarage(){ try{ localStorage.setItem(GARAGE_KEY,JSON.stringify(GARAG
 const carDef=id=>CARS.find(c=>c.id===id)||CARS[0];
 const owned=id=>!!GARAGE.cars[id];
 const FREE_LIVERIES=['plain','stripes'];
-const liveryOwned=(lid,carId)=>{ const L=LIVERIES.find(l=>l.id===lid); if(!L) return false; if(L.sig) return L.sig===carId&&carDone(carId); return FREE_LIVERIES.includes(lid)||GARAGE.liveries.includes(lid); };
-const carDone=id=>ACHIEVEMENTS.filter(a=>a.car===id).every(a=>GARAGE.ach[a.id]);
+const liveryOwned=(lid,carId)=>{ const L=LIVERIES.find(l=>l.id===lid); if(!L||(L.sig&&L.sig!==carId)) return false; return FREE_LIVERIES.includes(lid)||GARAGE.liveries.includes(lid); };
 
 // how this car drives right now, with its upgrades
 function perfFor(id){
@@ -104,7 +89,7 @@ function perfFor(id){
 let PERF=perfFor(GARAGE.car);
 
 /* ============================================================
-   REWARD CARDS — like Ink Nine's: after a podium finish (or an achievement) you choose one.
+   REWARD CARDS — like Ink Nine's: after a podium finish you choose one.
    A card is an upgrade level for the car you drove, a new car, or a new livery.
    ============================================================ */
 function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
@@ -113,7 +98,7 @@ function rewardOffer(n,carId){
   const ups=shuffle(UPGRADES.filter(u=>cs.up[u.id]<UPMAX).map(u=>({kind:'up',id:u.id,car:carId,tag:`${def.name} upgrade`,
     name:`${u.name} ${['I','II','III','IV'][cs.up[u.id]]}`,desc:u.desc})));
   const cars=shuffle(CARS.filter(c=>!owned(c.id)).map(c=>({kind:'car',id:c.id,tag:'New car',name:c.name,desc:c.blurb})));
-  const livs=shuffle(LIVERIES.filter(l=>!l.sig&&!liveryOwned(l.id,carId)).map(l=>({kind:'livery',id:l.id,tag:'New paint',name:l.name,desc:'An ink livery for any of your cars.'})));
+  const livs=shuffle(LIVERIES.filter(l=>(!l.sig||l.sig===carId)&&!liveryOwned(l.id,carId)).map(l=>({kind:'livery',id:l.id,tag:l.sig?`${def.name} signature paint`:'New paint',name:l.name,desc:l.sig?`A livery only the ${def.name} can wear.`:'An ink livery for any of your cars.'})));
   // a card of each kind first, so the choice is a real one, then fill with whatever is left
   [ups,cars,livs].forEach(p=>{ if(p.length&&out.length<n) out.push(p.shift()); });
   const rest=shuffle(ups.concat(cars,livs)); while(out.length<n&&rest.length) out.push(rest.shift());

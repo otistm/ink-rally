@@ -4,6 +4,8 @@
 - The "Online in group…" line on the stages screen moved below the stages, just above the co-driver voice button.
 - The Garage button moved below the stages.
 - The steering wheel sits a little lower, and the car (and friends' ghost cars) are drawn a little bigger.
+- The co-driver's card ("Left 5") now sits just above the steering wheel instead of at the top of the screen.
+- Achievements are gone: no more pop-ups, bonus picks or Achievements tab in the garage. Each car's signature livery is now a reward card, offered only while you drive that car. Anyone who already unlocked one keeps it.
 
 ## 0.7.1
 - The "How to drive" box is gone from the stages screen.
