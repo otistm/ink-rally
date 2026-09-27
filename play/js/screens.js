@@ -44,10 +44,6 @@ function showHome(){
     ${ONLINE?`<p class="asname">Driving as <b>${esc(meta.name)}</b>${meta.grp?` in <b>${esc(meta.grp)}</b>`:''} <button class="linkbtn" id="editName">Change name or group</button></p>
     <p class="netline" id="netline">Going online…</p>`:''}
     <div class="events">${rows}</div>
-    <div class="how"><b>How to drive.</b> Your car goes by itself. Put your thumb on the wheel at the bottom and turn it left or right to steer. Let go and it straightens up.<br>
-    Turn hard and the car slides. Hold the slide through a bend, then straighten up for a <b>boost</b>.<br>
-    Your co-driver calls each bend before you reach it. The number is how fast it is: <b>1</b> is a crawl, <b>6</b> is nearly flat out.<br>
-    Finish in the top three to <b>choose a reward</b>: an upgrade, a new car or new paint.</div>
     <button class="fbc${voiceOn?' on':''}" id="voiceBtn" aria-pressed="${voiceOn}">Co-driver voice: ${voiceOn?'on':'off'}</button>
     <p class="ver">Version ${VERSION}</p>`,true);
   document.querySelectorAll('.event').forEach(b=>b.onclick=()=>{ audioInit(); startStage(b.dataset.id); });

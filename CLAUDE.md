@@ -83,7 +83,7 @@ Progress is kept in the browser's localStorage. An update must never wipe or bre
 - Writing: sentence case, short and plain, no jargon.
 
 ## Smoke test
-- First launch asks for a name and group code; the stages screen then shows "Driving as", the online line, four stages, the how-to box, the voice toggle and the version.
+- First launch asks for a name and group code; the stages screen then shows "Driving as", the online line, four stages, the voice toggle and the version.
 - Start Pinewood: countdown 3, 2, 1, Go; the car drives off by itself; sliding your thumb steers; pulling down brakes.
 - Hold a slide through a bend: sparks appear, and straightening up gives "Boost!" with flames.
 - The co-driver card and voice call each bend before it arrives; splits show at one and two thirds.

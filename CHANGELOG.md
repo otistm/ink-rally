@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.7.1
+- The "How to drive" box is gone from the stages screen.
+
 ## 0.7.0
 - A fourth stage, Blackstone Moor: wide-open moorland gravel with big crests, four jumps and a caution hairpin. It has boulders instead of trees, and they're solid right to the edge.
 - Online play, like Ink Nine. The first time you open the game it asks for your name and an optional group code. You can change both from the stages screen.

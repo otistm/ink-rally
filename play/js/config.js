@@ -3,7 +3,7 @@
    ===================================================================== */
 "use strict";
 // Shown on the stages screen. Bump it with every change you ship.
-const VERSION = '0.7.0';
+const VERSION = '0.7.1';
 // Online play (ghost drivers and leaderboards). This is the same Supabase project as Ink Nine; Ink Rally uses its own
 // table, rally_runs. The key is the public "publishable" one and is safe to ship. Leave both empty to play offline.
 const SUPABASE_URL = 'https://nzysakunytcbkzdfvhxk.supabase.co';
