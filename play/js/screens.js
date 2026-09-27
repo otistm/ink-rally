@@ -2,18 +2,20 @@
 "use strict";
 /* ============================================================
    SAVED PROGRESS (localStorage; never rename these keys)
-   inkrally-bests: {stageId:{t, splits:[s1,s2], rev, old}}   inkrally-meta: {v:1, voice}
+   inkrally-bests: {stageId:{t, splits:[s1,s2], rev, old}}   inkrally-meta: {v:1, voice, name, grp}
    rev is the stage layout the time was set on (missing means 1). A time from an older layout is kept under `old`, never deleted.
    ============================================================ */
 function load(k,d){ try{ const v=JSON.parse(localStorage.getItem(k)); return v&&typeof v==='object'?v:d; }catch(e){ return d; } }
 function store(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
 const bests=load('inkrally-bests',{});
-const meta=Object.assign({v:1,voice:true},load('inkrally-meta',{}));
+const meta=Object.assign({v:1,voice:true,name:'',grp:''},load('inkrally-meta',{}));
 voiceOn=meta.voice!==false;
 const revOf=id=>{ const d=STAGES.find(s=>s.id===id); return d&&d.rev||1; };
 function bestFor(id){ const b=bests[id]; return b&&isFinite(b.t)&&(b.rev||1)===revOf(id)?b:null; }
 function medalFor(st,t){ const m=st.medals; return t<=m.gold?'gold':t<=m.silver?'silver':t<=m.bronze?'bronze':null; }
 const MEDAL={gold:'Gold',silver:'Silver',bronze:'Bronze'};
+// three rival drivers set the pace on every stage: beat Flick for 1st, Gus for 2nd, Nell for 3rd
+const RIVALS={gold:{name:'Flick Moreau',bio:'gold pace'},silver:{name:'Gus Paddock',bio:'silver pace'},bronze:{name:'Nell Quarry',bio:'bronze pace'}};
 
 // trophies are told apart by ink alone: gold is solid with a star, silver is hatched, bronze is an outline
 function trophySvg(kind,size=40){
@@ -39,6 +41,8 @@ function showHome(){
   const car=carDef(GARAGE.car);
   openCard(`<h2 class="logo">Ink Rally</h2><p>Drive fast. Stay on the road. Get trophies.</p>
     <button class="shopbtn" id="toGarage"><canvas></canvas><span><b>Garage</b><small>${car.name} · cars, upgrades and paint</small></span></button>
+    ${ONLINE?`<p class="asname">Driving as <b>${esc(meta.name)}</b>${meta.grp?` in <b>${esc(meta.grp)}</b>`:''} <button class="linkbtn" id="editName">Change name or group</button></p>
+    <p class="netline" id="netline">Going online…</p>`:''}
     <div class="events">${rows}</div>
     <div class="how"><b>How to drive.</b> Your car goes by itself. Put your thumb on the wheel at the bottom and turn it left or right to steer. Let go and it straightens up.<br>
     Turn hard and the car slides. Hold the slide through a bend, then straighten up for a <b>boost</b>.<br>
@@ -49,6 +53,8 @@ function showHome(){
   document.querySelectorAll('.event').forEach(b=>b.onclick=()=>{ audioInit(); startStage(b.dataset.id); });
   { const cs=GARAGE.cars[GARAGE.car]; carThumb($('toGarage').querySelector('canvas'),GARAGE.car,cs.livery,cs.number,{ang:-.3,zoom:.9}); }
   $('toGarage').onclick=()=>{ audioInit(); GV.car=GARAGE.car; GV.tab='up'; showGarage('home'); };
+  if($('editName')) $('editName').onclick=()=>showName(true);
+  refreshNetLine();
   $('voiceBtn').onclick=()=>{ voiceOn=!voiceOn; meta.voice=voiceOn; store('inkrally-meta',meta); showHome(); if(voiceOn) say('Voice on',true); };
 }
 function showPause(){
@@ -69,15 +75,15 @@ function showFinish(again){
     const st=S.stage, id=st.def.id, t=S.finT, prev=bestFor(id), isBest=!prev||t<prev.t, m=medalFor(st,t), pm=prev?medalFor(st,prev.t):null;
     if(isBest){ const was=bests[id], old=was&&(was.rev||1)!==revOf(id)?was:was&&was.old;
       bests[id]={t,splits:S.splitT.slice(),rev:revOf(id)}; if(old) bests[id].old=old; store('inkrally-bests',bests); }
-    const rows=[['Gold',st.medals.gold],['Silver',st.medals.silver],['Bronze',st.medals.bronze]].map(r=>({nm:r[0],t:r[1]}));
-    rows.push({nm:'You',t,me:true}); rows.sort((a,b)=>a.t-b.t);
-    const board=rows.map((r,i)=>`<div class="row${r.me?' me':''}" style="animation-delay:${.3+i*.07}s"><span class="pos">${i+1}</span><span class="nm">${r.nm}</span><i></i><b>${fmt(r.t)}</b></div>`).join('');
+    const rows=['gold','silver','bronze'].map(k=>({nm:RIVALS[k].name,bio:RIVALS[k].bio,t:st.medals[k]}));
+    rows.push({nm:meta.name?`${esc(meta.name)} (you)`:'You',t,me:true}); rows.sort((a,b)=>a.t-b.t);
+    const board=rows.map((r,i)=>`<div class="row${r.me?' me':''}" style="animation-delay:${.3+i*.07}s"><span class="pos">${i+1}</span><span class="nm">${r.nm}${r.bio?`<small>${r.bio}</small>`:''}</span><i></i><b>${fmt(r.t)}</b></div>`).join('');
     const newMedal=m&&(!pm||['gold','silver','bronze'].indexOf(m)<['gold','silver','bronze'].indexOf(pm));
     S.fin={top:`<h2>${m?PLACE[m]+' place'+(m==='gold'?'!':''):isBest&&prev?'New best!':'Stage clear'}</h2><p>${st.def.name}${m&&isBest&&prev?' · a new best':''}</p>
       <div class="big">${fmt(t)}</div>
       <p class="nxt">${prev?(isBest?`${fmtDiff(t-prev.t)} on your best`:`Your best is ${fmt(prev.t)} (${fmtDiff(t-prev.t)})`):'First time through'}</p>
       ${m?`<div class="award">${trophySvg(m,64)}<p>${MEDAL[m]}${newMedal?'!':''}</p></div>`:`<p class="perk">Beat ${fmt(st.medals.bronze)} for 3rd place and a reward.</p>`}`,
-      board:`<div class="board">${board}</div>`};
+      board:`<h3>This run</h3><div class="board">${board}</div>`};
     if(m) setTimeout(()=>sfx('finish'),250);
   }
   renderFinish(false);
@@ -93,7 +99,7 @@ function renderFinish(still){
     <button class="btn ghost" id="fGarage">Garage</button>
     ${next?`<button class="btn ghost" id="fNext">Next stage: ${next.name}</button>`:''}
     <button class="btn ghost" id="fHome">Stages</button>`;
-  openCard(S.fin.top+won+pick+S.fin.board+btns,false,still);
+  openCard(S.fin.top+won+pick+S.fin.board+leaderboardHTML()+btns,false,still);
   if(g){ document.querySelectorAll('.pick').forEach(b=>b.onclick=()=>{ if(g.done) return; g.done=true; audioInit();
       const o=g.offer[+b.dataset.k]; applyReward(o); S.chosen.push(o); b.classList.add('chosen'); sfx('buy');
       setTimeout(()=>renderFinish(true),480); }); return; }
@@ -101,4 +107,37 @@ function renderFinish(still){
   $('fGarage').onclick=()=>{ GV.car=GARAGE.car; GV.tab='up'; showGarage('finish'); };
   if(next) $('fNext').onclick=()=>startStage(next.id);
   $('fHome').onclick=showHome;
+}
+
+/* ============================================================
+   NAME AND GROUP — like Ink Nine: the name friends see over your ghost and on the leaderboard,
+   and an optional group code so a crew of friends only race each other
+   ============================================================ */
+function showName(editing){
+  S.st='home'; hudShow(false);
+  openCard(`<h2 class="logo">Ink Rally</h2><p>${editing?'Change the name friends see on the leaderboard and over your ghost car.':'What should we call you? Friends will see this name on the leaderboard and over your ghost car.'}</p>
+    <form id="nameForm" class="nameform" autocomplete="off"><label for="nameIn">Your name</label>
+    <input id="nameIn" maxlength="16" placeholder="Your name" value="${esc(meta.name||'')}" autocapitalize="words" spellcheck="false" enterkeyhint="go">
+    ${ONLINE?`<label for="grpIn">Group code (optional)</label><input id="grpIn" class="grpin" maxlength="24" placeholder="e.g. sunday-crew" value="${esc(meta.grp||'')}" autocapitalize="none" spellcheck="false">
+    <small class="nhelp">Friends who enter the same code race each other's ghosts and share a leaderboard. Leave it empty to race everyone.</small>`:''}
+    <p class="nerr" id="nerr"></p><button class="btn" type="submit">${editing?'Save':'Start your engine'}</button>
+    ${editing?'<button class="btn ghost" type="button" id="nameBack">Back</button>':''}</form>`,true);
+  const inp=$('nameIn'); setTimeout(()=>inp.focus(),120);
+  $('nameForm').onsubmit=e=>{ e.preventDefault(); audioInit();
+    const v=inp.value.replace(/\s+/g,' ').trim();
+    if(!v){ $('nerr').textContent='Enter a name to start.'; inp.classList.remove('nope'); void inp.offsetWidth; inp.classList.add('nope'); sfx('nope'); return; }
+    meta.name=v.slice(0,16); if($('grpIn')) meta.grp=$('grpIn').value.toLowerCase().replace(/[^a-z0-9-]+/g,'-').replace(/^-+|-+$/g,'').slice(0,24);
+    store('inkrally-meta',meta); syncName(); sfx('buy'); showHome(); };
+  if(editing) $('nameBack').onclick=showHome;
+}
+async function refreshNetLine(){
+  if(!ONLINE) return; await NET.ready; const el=$('netline'); if(!el) return;
+  if(NET.err){ el.textContent='Online play problem: '+NET.err; el.classList.add('bad'); return; }
+  if(!NET.sb){ el.textContent='Online play is offline right now.'; return; }
+  try{ const {data,error}=await NET.sb.from('rally_runs').select('player_id,name').eq('grp',meta.grp||'');
+    if(error) throw error;
+    const others=[...new Map((data||[]).filter(r=>r.player_id!==NET.uid).map(r=>[r.player_id,r.name||'Driver'])).values()];
+    const where=meta.grp?`group ${meta.grp}`:'the open group';
+    if($('netline')) el.textContent=others.length?`Online in ${where} with ${others.slice(0,6).join(', ')}${others.length>6?` and ${others.length-6} more`:''}.`:`Online in ${where}. Nobody else has set a time yet.`;
+  }catch(e){ el.textContent='Online play problem: '+(e.message||e.code||'could not read the leaderboard'); el.classList.add('bad'); }
 }

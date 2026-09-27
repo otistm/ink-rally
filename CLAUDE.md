@@ -1,6 +1,6 @@
 # Ink Rally: notes for Claude Code
 
-Ink Rally is a minimal mobile rally game drawn like a paper-and-ink cartoon. It's the sister game to Ink Nine (`../ink-nine`) and shares its look, fonts and way of working. It is an early prototype and not live yet.
+Ink Rally is a minimal mobile rally game drawn like a paper-and-ink cartoon. It's the sister game to Ink Nine (`../ink-nine`) and shares its look, fonts and way of working. It is live at https://ink-rally.vercel.app and testers are playing it.
 
 ## Who you're working with
 Otis is the designer. He doesn't read code. He judges changes by playing them on his phone.
@@ -8,7 +8,9 @@ Otis is the designer. He doesn't read code. He judges changes by playing them on
 - Keep replies short. Ask one question at a time when a design decision is his to make.
 
 ## How the project is built
-- **No build step, no frameworks, no npm packages in the game.** Plain HTML, CSS and JavaScript files served as-is. The only outside code is Google Fonts.
+- **No build step, no frameworks, no npm packages in the game.** Plain HTML, CSS and JavaScript files served as-is. The only outside code is Supabase's client, loaded from a CDN when the game starts, plus Google Fonts.
+- `play/js/config.js` — `VERSION` and the Supabase URL and publishable key. The key is public by design. **Never add a Supabase secret or service key anywhere.**
+- `supabase/` — SQL files Otis runs by hand in the Supabase SQL Editor, numbered in order.
 - `index.html` — the front page (a car sliding round a loop, and a Play button).
 - `play/index.html` — the game page. It loads `styles.css` and then the scripts in `play/js/` **in the order listed there**.
 - The scripts are classic scripts that share one global scope. Order matters: a file can only use things defined in files above it *while it is loading*. Calls that happen later (on tap, per frame) can use anything.
@@ -16,7 +18,7 @@ Otis is the designer. He doesn't read code. He judges changes by playing them on
 
 | File | What's in it |
 |---|---|
-| config.js | `VERSION` |
+| config.js | `VERSION`, Supabase URL and publishable key |
 | engine.js | Car constants, surfaces (grip, slide, traction), the stage builder that turns pacenotes into a road, medal times |
 | stages.js | All stages, written as pacenotes |
 | cars.js | Cars, upgrades, liveries, achievements, reward cards, the saved garage, and each car's performance (`perfFor`, `PERF`) |
@@ -24,8 +26,9 @@ Otis is the designer. He doesn't read code. He judges changes by playing them on
 | world.js | Game state `S`, tyre marks, scenery (trees, hay bales, crowds, chevron boards) |
 | audio.js | Procedural engine and tyre sounds, knocks, the co-driver's voice |
 | ui.js | HUD, pacenote card, achievement toasts, callouts, hints |
-| screens.js | Saved bests, stages screen, pause, finish card with reward picks |
+| screens.js | Saved bests, stages screen, name and group screen, pause, finish card with rivals, reward picks and leaderboard |
 | garage.js | The garage: pick a car, see its upgrades, paint, race number, achievements |
+| online.js | Supabase sign-in, recording runs, ghost drivers, the stage leaderboard, saving best runs |
 | flow.js | Starting a stage, countdown, co-driver calls, splits, achievements, deciding reward picks, finish, wrong way, rescue |
 | physics.js | Arcade handling (scaled by the car's `PERF`), drift boost, jumps and crests, hay bales, trees and boards, dust |
 | input.js | One-thumb steering and braking, arrow keys |
@@ -58,9 +61,16 @@ A stage in `stages.js` is a list of notes, the way a co-driver reads them: `['S'
 3. Test locally: run `python -m http.server` in the repo folder and open http://localhost:8000/play/ at a phone size (390 × 844). Arrow keys drive on a computer.
 4. If you changed a stage, make sure no two stretches of road more than 80 m apart come within about 30 m of each other.
 
+## Online play (Supabase)
+- It's the same Supabase project as Ink Nine, with its own table `rally_runs` (`supabase/01-rally-runs.sql`): one row per player per stage holding their best time, car, paint and number, and `path`, the ghost recording (x, y, heading and height every 0.1 s).
+- Players are anonymous Supabase users with a name and an optional group code (`meta.name`, `meta.grp`). Row-level security lets each player write only their own rows. Only runs with the stage's current `rev` and the player's group are shown.
+- The five fastest other drivers in your group are raced as ghosts; the finish card shows the top ten in your group.
+- **Local play connects to the real Supabase**, so test runs land on testers' leaderboards. Before playing locally, disconnect in the browser console with `NET.ready.then(()=>{NET.sb=null;NET.uid=null;})`, or play in a private group code.
+- Any schema change needs a new numbered file in `supabase/` and a clear note to Otis to run it before merging.
+
 ## Protect players' saved progress
 Progress is kept in the browser's localStorage. An update must never wipe or break it.
-- Keys: `inkrally-bests` (per stage id: best time, split times, `rev` of the layout it was set on, and any `old` time from an earlier layout), `inkrally-meta` (`v`, voice on or off), `inkrally-garage` (`v`, the selected `car`, owned `cars` with their `up`grades, `livery` and `number`, bought `liveries`, earned `ach`ievements; old `coins` and `total` from the coin shop are kept but unused).
+- Keys: `inkrally-bests` (per stage id: best time, split times, `rev` of the layout it was set on, and any `old` time from an earlier layout), `inkrally-meta` (`v`, voice on or off, `name`, `grp`), `inkrally-garage` (`v`, the selected `car`, owned `cars` with their `up`grades, `livery` and `number`, bought `liveries`, earned `ach`ievements; old `coins` and `total` from the coin shop are kept but unused).
 - Never rename a car, upgrade, livery or achievement `id`; they are saved in players' garages.
 - Never rename or remove a saved field or a stage `id`. Add new fields with defaults.
 - Changing a stage's layout: bump its `rev` in stages.js. Old times are then set aside (kept under `old`) instead of compared. Tell Otis when that happens.
@@ -73,11 +83,12 @@ Progress is kept in the browser's localStorage. An update must never wipe or bre
 - Writing: sentence case, short and plain, no jargon.
 
 ## Smoke test
-- Stages screen shows three stages, the how-to box, the voice toggle and the version.
+- First launch asks for a name and group code; the stages screen then shows "Driving as", the online line, four stages, the how-to box, the voice toggle and the version.
 - Start Pinewood: countdown 3, 2, 1, Go; the car drives off by itself; sliding your thumb steers; pulling down brakes.
 - Hold a slide through a bend: sparks appear, and straightening up gives "Boost!" with flames.
 - The co-driver card and voice call each bend before it arrives; splits show at one and two thirds.
 - Finish on the podium: the card says your place and offers reward cards (3, 2 or 1); picking one applies it, the buttons appear, and it's still in the garage after a refresh.
 - Clip a hay bale: a soft bounce back onto the road. Hit a tree: the car stops with a knock and shake; "Back on the road" appears and works.
 - The finish card shows your time, the medal board, and the best time is kept after a refresh.
+- Online: a finished run says "Saved to the leaderboard" and appears in the finish card's leaderboard; friends in the same group appear as ghost cars with name tags.
 - No errors in the browser console.

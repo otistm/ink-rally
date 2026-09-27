@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.7.0
+- A fourth stage, Blackstone Moor: wide-open moorland gravel with big crests, four jumps and a caution hairpin. It has boulders instead of trees, and they're solid right to the edge.
+- Online play, like Ink Nine. The first time you open the game it asks for your name and an optional group code. You can change both from the stages screen.
+- Ghost drivers: your best run on each stage is saved online. The five fastest other drivers in your group race alongside you as see-through ghost cars, in their own car and paint, with name tags.
+- Leaderboards: the finish card shows the best times in your group on that stage, with your run highlighted and whether your time was saved.
+- Three rival drivers set the pace on every stage: Flick Moreau (gold), Gus Paddock (silver) and Nell Quarry (bronze). Beat them for 1st, 2nd or 3rd place and a reward.
+- Long stage names shrink to fit at the top of the screen.
+
 ## 0.6.0
 - Coins are gone. Instead, finish a stage in the top three to choose a reward, like the reward cards in Ink Nine: 1st place picks from 3 cards, 2nd from 2, and 3rd gets 1 card.
 - A reward card is an upgrade level for the car you just drove (Engine, Tyres or Boost), a new car, or a new livery.

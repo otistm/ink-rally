@@ -84,10 +84,11 @@ function drawBits(){
 }
 function shadowVec(){ const a=-cam.rot; return [Math.cos(a)*.35-Math.sin(a)*.32, Math.sin(a)*.35+Math.cos(a)*.32]; }
 function drawTrees(R,t){
-  const sc=S.scene, pine=S.def.trees==='pine', [sx,sy]=shadowVec();
+  const sc=S.scene, pine=S.def.trees==='pine', rock=S.def.trees==='rock', [sx,sy]=shadowVec();
   const vis=sc.trees.filter(tr=>Math.abs(tr.x-cam.x)<R+tr.r&&Math.abs(tr.y-cam.y)<R+tr.r);
   ctx.fillStyle='rgba(0,0,0,.09)'; ctx.beginPath(); vis.forEach(tr=>{ const r=tr.r; ctx.moveTo(tr.x+sx*r+r,tr.y+sy*r); ctx.ellipse(tr.x+sx*r,tr.y+sy*r,r,r*.92,0,0,TAU); }); ctx.fill();
   vis.forEach(tr=>{ const wob=tr.hit?1+Math.sin(tr.hit*40)*tr.hit*.12:1, r=tr.r*wob, x=tr.x, y=tr.y;
+    if(rock){ drawRock(tr,r); return; }
     ctx.beginPath();
     if(pine){ const n=14; for(let k=0;k<=n*2;k++){ const a=k/(n*2)*TAU+tr.ph, rr=r*(k%2?.74:1); const px=x+Math.cos(a)*rr, py=y+Math.sin(a)*rr; k?ctx.lineTo(px,py):ctx.moveTo(px,py); } }
     else { for(let k=0;k<=40;k++){ const a=k/40*TAU, rr=r*(1+.075*Math.sin(a*7+tr.ph)); const px=x+Math.cos(a)*rr, py=y+Math.sin(a)*rr; k?ctx.lineTo(px,py):ctx.moveTo(px,py); } }
@@ -96,6 +97,18 @@ function drawTrees(R,t){
     if(pine){ for(let k=0;k<7;k++){ const a=k/7*TAU+tr.ph*1.3; ctx.moveTo(x+Math.cos(a)*r*.15,y+Math.sin(a)*r*.15); ctx.lineTo(x+Math.cos(a)*r*.55,y+Math.sin(a)*r*.55); } }
     else { const [lx,ly]=[x-r*.12,y-r*.12]; const a0=-cam.rot+.15*Math.PI; ctx.arc(lx,ly,r*.62,a0,a0+.47*Math.PI); }
     ctx.stroke(); });
+}
+// a moorland boulder: a lumpy ink outline with hatching on the side away from the light
+function drawRock(tr,r){
+  const n=9, pts=[]; for(let k=0;k<n;k++){ const a=k/n*TAU+tr.ph, rr=r*(.78+.22*Math.abs(Math.sin(tr.ph*7+k*2.3))); pts.push([tr.x+Math.cos(a)*rr,tr.y+Math.sin(a)*rr*.85]); }
+  const path=()=>{ ctx.beginPath(); pts.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1])); ctx.closePath(); };
+  path(); ctx.fillStyle='#fff'; ctx.fill();
+  ctx.save(); path(); ctx.clip(); const up=-cam.rot, lx=Math.cos(up+Math.PI/4), ly=Math.sin(up+Math.PI/4);
+  ctx.strokeStyle='#000'; ctx.lineWidth=1.1*PX; ctx.globalAlpha=.55; ctx.beginPath();
+  for(let k=-4;k<=4;k++){ const o=k*r*.2, cx=tr.x+lx*r*.45-ly*o, cy=tr.y+ly*r*.45+lx*o; ctx.moveTo(cx-lx*r*.5,cy-ly*r*.5); ctx.lineTo(cx+lx*r*.6,cy+ly*r*.6); }
+  ctx.stroke(); ctx.restore();
+  path(); ctx.lineWidth=INK*PX; ctx.strokeStyle='#000'; ctx.stroke();
+  ctx.lineWidth=1.2*PX; ctx.beginPath(); ctx.moveTo(pts[1][0]*.7+tr.x*.3,pts[1][1]*.7+tr.y*.3); ctx.lineTo(pts[3][0]*.5+tr.x*.5,pts[3][1]*.5+tr.y*.5); ctx.stroke();
 }
 function drawTapes(){
   ctx.save(); ctx.strokeStyle='#000'; ctx.lineWidth=1.4*PX; ctx.setLineDash([.9,.6]);
@@ -242,6 +255,6 @@ function draw(t){
   worldTransform();
   ctx.fillStyle=S.def.surface==='snow'?PAT.field:PAT.grass; ctx.fillRect(cam.x-R,cam.y-R,R*2,R*2);
   drawRoad(st,R); drawLines(st); drawSkids(R); drawTapes();
-  drawBales(R); drawDust(); drawBits(); drawSigns(R); drawFlame(t); drawCar(); drawCrowd(R,t); drawTrees(R,t); drawBanners(st); drawLabels();
+  drawBales(R); drawDust(); drawBits(); drawSigns(R); drawGhosts(R); drawFlame(t); drawCar(); drawCrowd(R,t); drawTrees(R,t); drawBanners(st); drawLabels();
   screenTransform(); drawSpeed(t);
 }
