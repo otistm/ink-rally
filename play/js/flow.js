@@ -1,4 +1,4 @@
-/* Ink Rally: Stage flow: countdown, co-driver calls, splits, achievements, finish and reward picks, wrong way and rescue. */
+/* Ink Rally: Stage flow: countdown, co-driver calls, splits, finish and reward picks, wrong way and rescue. */
 "use strict";
 /* ============================================================
    FLOW
@@ -13,7 +13,7 @@ function startStage(id){
   S.parts=[]; S.skid=newSkids(); S.wrong=0; S.stuck=0; S.off=0; S.finTimer=0; S.sq=0; S.sqv=0; S.shake=0;
   S.markI=0; lastClock='';
   PERF=perfFor(GARAGE.car);
-  S.run=newRun(def.id); S.achT=0; S.newAch=[]; S.picks=[]; S.chosen=[]; S.fin=null;
+  S.run={stage:def.id,car:GARAGE.car,medal:null}; S.picks=[]; S.chosen=[]; S.fin=null;
   recReset(); loadBoard(def); // friends' ghosts appear as soon as they've loaded
   cam.x=p.x+Math.cos(p.a)*20; cam.y=p.y+Math.sin(p.a)*20; cam.z=5; cam.rot=-Math.PI/2-p.a;
   closeCard(); hudShow(true); hudStage(); IN.reset(); hush();
@@ -54,7 +54,6 @@ function flowStep(dt){
     return;
   }
   if(S.st==='drive'){ S.race+=dt; recStep(); }
-  if(S.st==='drive'&&(S.achT+=dt)>.25){ S.achT=0; checkAch(); }
   // co-driver: call the next bend a couple of seconds before you reach it
   const callD=45+Math.max(0,c.vf)*1.8;
   if(S.callI<S.calls.length&&c.s+callD>=S.calls[S.callI].s){ const k=S.calls[S.callI++]; S.note=k; showNote(k); say(k.say,false); }
@@ -75,21 +74,10 @@ function flowStep(dt){
   if(S.wrong>1) hint('Wrong way! Turn around');
   else if(IN.down||$('hintT').textContent.startsWith('Wrong')) hint(null);
 }
-/* What a run did, for achievements. */
-function newRun(stage){ return {stage,car:GARAGE.car,touches:0,boosts:0,supers:0,maxKmh:0,longJump:0,landings:0,longSlide:0,finished:false,medal:null}; }
-// achievements are earned the moment they happen, for the car you're driving; each earns a bonus reward pick at the finish
-function checkAch(){
-  const R=S.run; if(!R) return;
-  ACHIEVEMENTS.forEach(a=>{ if(a.car!==R.car||GARAGE.ach[a.id]||!a.test(R)) return;
-    GARAGE.ach[a.id]=true; S.newAch.push(a); saveGarage();
-    toast('Achievement: '+a.name,`${a.desc} A bonus reward waits at the finish.`); sfx('achieve');
-    if(carDone(R.car)){ const L=LIVERIES.find(l=>l.sig===R.car); setTimeout(()=>toast('New livery: '+L.name,`Every ${carDef(R.car).name} achievement done. Paint it on in the garage.`),2600); } });
-}
-// at the finish: a podium place earns a reward pick (1st chooses from 3 cards, 2nd from 2, 3rd takes 1), and each achievement one more from 3
+// at the finish: a podium place earns a reward pick (1st chooses from 3 cards, 2nd from 2, 3rd takes 1)
 function bankRun(){
-  const R=S.run, st=S.stage; R.finished=true; R.medal=medalFor(st,S.finT); checkAch();
-  S.picks=[]; if(R.medal) S.picks.push({why:`${PLACE[R.medal]} place`,n:PICKS[R.medal]});
-  S.newAch.forEach(a=>S.picks.push({why:`Achievement: ${a.name}`,n:3}));
+  const R=S.run; R.medal=medalFor(S.stage,S.finT);
+  S.picks=R.medal?[{why:`${PLACE[R.medal]} place`,n:PICKS[R.medal]}]:[];
 }
 // put the car back in the middle of the road, facing the right way; the clock keeps running
 function rescue(){

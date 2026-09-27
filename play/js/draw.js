@@ -4,7 +4,7 @@
    DRAW
    ============================================================ */
 let PX=1/7; // one screen pixel in metres, set each frame
-const CARDRAW=1.5; // the car is drawn larger than life so it reads well at speed
+const CARDRAW=1.7; // the car is drawn larger than life so it reads well at speed
 function roadPath(pts,a,b,off){ ctx.beginPath(); for(let i=a;i<=b;i++){ const p=pts[i], x=p.x+p.nx*off, y=p.y+p.ny*off; i===a?ctx.moveTo(x,y):ctx.lineTo(x,y); } }
 // which stretches of road are on screen, split wherever the surface changes
 function visibleRuns(st,R){

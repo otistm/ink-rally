@@ -21,15 +21,15 @@ Otis is the designer. He doesn't read code. He judges changes by playing them on
 | config.js | `VERSION`, Supabase URL and publishable key |
 | engine.js | Car constants, surfaces (grip, slide, traction), the stage builder that turns pacenotes into a road, medal times |
 | stages.js | All stages, written as pacenotes |
-| cars.js | Cars, upgrades, liveries, achievements, reward cards, the saved garage, and each car's performance (`perfFor`, `PERF`) |
+| cars.js | Cars, upgrades, liveries, reward cards, the saved garage, and each car's performance (`perfFor`, `PERF`) |
 | render.js | Canvas, ink patterns, the camera (it turns with the car) |
 | world.js | Game state `S`, tyre marks, scenery (trees, hay bales, crowds, chevron boards) |
 | audio.js | Procedural engine and tyre sounds, knocks, the co-driver's voice |
-| ui.js | HUD, pacenote card, achievement toasts, callouts, hints |
+| ui.js | HUD, pacenote card (just above the wheel), callouts, hints |
 | screens.js | Saved bests, stages screen, name and group screen, pause, finish card with rivals, reward picks and leaderboard |
-| garage.js | The garage: pick a car, see its upgrades, paint, race number, achievements |
+| garage.js | The garage: pick a car, see its upgrades, paint, race number |
 | online.js | Supabase sign-in, recording runs, ghost drivers, the stage leaderboard, saving best runs |
-| flow.js | Starting a stage, countdown, co-driver calls, splits, achievements, deciding reward picks, finish, wrong way, rescue |
+| flow.js | Starting a stage, countdown, co-driver calls, splits, deciding reward picks, finish, wrong way, rescue |
 | physics.js | Arcade handling (scaled by the car's `PERF`), drift boost, jumps and crests, hay bales, trees and boards, dust |
 | input.js | One-thumb steering and braking, arrow keys |
 | draw.js | Drawing everything, including every car shape and livery (`drawCarShape`, `paintLivery`) |
@@ -44,10 +44,10 @@ Otis wants it to feel like an arcade racer, not a realistic one.
 - The camera keeps the car in the middle of the screen, away from the thumb.
 
 ## Rewards, cars and the garage
-- There are no coins. Like Ink Nine's reward cards: a podium finish earns a pick at the finish (`PICKS` in cars.js: 1st chooses from 3 cards, 2nd from 2, 3rd takes 1), and every achievement earned in that stage adds a bonus pick from 3.
-- A card is an upgrade level for the car just driven, a car not yet owned, or a livery not yet owned (`rewardOffer` and `applyReward` in cars.js). Offers try to include one of each kind. The finish card's buttons only appear once every pick is made.
-- Upgrades belong to one car, so you upgrade a car by driving it. Bought liveries are shared by all cars; a signature livery belongs to one car and unlocks when all its achievements are done.
-- Each car's `stats` multiply the base handling; upgrades add to them in `perfFor`. Achievements belong to one car and only count while driving it.
+- There are no coins or achievements. Like Ink Nine's reward cards: a podium finish earns a pick at the finish (`PICKS` in cars.js: 1st chooses from 3 cards, 2nd from 2, 3rd takes 1).
+- A card is an upgrade level for the car just driven, a car not yet owned, or a livery not yet owned, including the driven car's signature livery (`rewardOffer` and `applyReward` in cars.js). Offers try to include one of each kind. The finish card's buttons only appear once every pick is made.
+- Upgrades belong to one car, so you upgrade a car by driving it. Won liveries are shared by all cars, except a signature livery (`sig`), which belongs to one car.
+- Each car's `stats` multiply the base handling; upgrades add to them in `perfFor`.
 - Liveries are ink only (patterns, never colour).
 
 ## Stages are pacenotes
@@ -70,8 +70,8 @@ A stage in `stages.js` is a list of notes, the way a co-driver reads them: `['S'
 
 ## Protect players' saved progress
 Progress is kept in the browser's localStorage. An update must never wipe or break it.
-- Keys: `inkrally-bests` (per stage id: best time, split times, `rev` of the layout it was set on, and any `old` time from an earlier layout), `inkrally-meta` (`v`, voice on or off, `name`, `grp`), `inkrally-garage` (`v`, the selected `car`, owned `cars` with their `up`grades, `livery` and `number`, bought `liveries`, earned `ach`ievements; old `coins` and `total` from the coin shop are kept but unused).
-- Never rename a car, upgrade, livery or achievement `id`; they are saved in players' garages.
+- Keys: `inkrally-bests` (per stage id: best time, split times, `rev` of the layout it was set on, and any `old` time from an earlier layout), `inkrally-meta` (`v`, voice on or off, `name`, `grp`), `inkrally-garage` (`v`, the selected `car`, owned `cars` with their `up`grades, `livery` and `number`, won `liveries`; old `coins`, `total` and `ach`ievements from earlier versions are kept but unused).
+- Never rename a car, upgrade or livery `id`; they are saved in players' garages.
 - Never rename or remove a saved field or a stage `id`. Add new fields with defaults.
 - Changing a stage's layout: bump its `rev` in stages.js. Old times are then set aside (kept under `old`) instead of compared. Tell Otis when that happens.
 

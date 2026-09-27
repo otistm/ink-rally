@@ -1,4 +1,4 @@
-/* Ink Rally: The garage. Pick your car, see its upgrades, paint it, set its number, and see each car's achievements.
+/* Ink Rally: The garage. Pick your car, see its upgrades, paint it and set its number.
    Everything here is won from reward cards after a podium finish. */
 "use strict";
 /* ============================================================
@@ -28,25 +28,23 @@ function renderGarage(){
   const P=perfFor(id);
   const stat=(n,v)=>`<span>${n}</span><div class="bar"><i style="transform:scaleX(${clamp(v,.08,1).toFixed(3)})"></i></div>`;
   const stats=stat('Top speed',(P.top-.85)/.45)+stat('Grip on tarmac',(P.grip-.8)/.55)+stat('Grip on gravel and snow',(P.loose-.75)/.65)+stat('Boost',((P.boostPow+P.charge)/2-.8)/.8)+stat('Jumps',(P.jump-.8)/.6);
-  const tabs=have?`<div class="tabs" role="tablist">${[['up','Upgrades'],['paint','Paint'],['ach','Achievements']].map(([k,n])=>`<button class="tab${GV.tab===k?' on':''}" role="tab" aria-selected="${GV.tab===k}" data-tab="${k}">${n}</button>`).join('')}</div>`:'';
+  const tabs=have?`<div class="tabs" role="tablist">${[['up','Upgrades'],['paint','Paint']].map(([k,n])=>`<button class="tab${GV.tab===k?' on':''}" role="tab" aria-selected="${GV.tab===k}" data-tab="${k}">${n}</button>`).join('')}</div>`:'';
   let body='';
   if(!have){
     body=`<p class="cblurb">${def.blurb}</p><div class="stats">${stats}</div>
-      <p class="sighint">Not in your garage yet. Finish a stage in the top three, then choose it from the reward cards.</p>
-      ${achList(id)}`;
+      <p class="sighint">Not in your garage yet. Finish a stage in the top three, then choose it from the reward cards.</p>`;
   } else if(GV.tab==='up'){
     body=`<p class="cblurb">${def.blurb}</p><div class="stats">${stats}</div><div class="gl">${UPGRADES.map(u=>{ const lv=cs.up[u.id];
       return `<div class="srow"><div class="sinfo"><b>${u.name}</b><small>${u.desc}</small><span class="pips" aria-label="Level ${lv} of ${UPMAX}">${Array.from({length:UPMAX},(_,i)=>`<i class="${i<lv?'on':''}"></i>`).join('')}</span></div>
         <span class="tagx">${lv>=UPMAX?'Maxed':`Level ${lv} of ${UPMAX}`}</span></div>`; }).join('')}</div>
       <p class="sighint">Win upgrades for the ${def.name} by driving it: finish in the top three and choose one from the reward cards.</p>`;
   } else if(GV.tab==='paint'){
-    const sig=LIVERIES.find(l=>l.sig===id);
     body=`<div class="lv">${LIVERIES.filter(l=>!l.sig||l.sig===id).map(l=>{ const got=liveryOwned(l.id,id), on=cs.livery===l.id;
-      const tag=on?'On':got?'Owned':l.sig?'Achievements':'Reward card';
+      const tag=on?'On':got?'Owned':'Reward card';
       return `<button class="lvb${on?' on':''}${got?'':' lock'}" data-liv="${l.id}" aria-pressed="${on}"><canvas></canvas>${l.name}<small>${tag}</small></button>`; }).join('')}</div>
-      ${carDone(id)?'':`<p class="sighint">Earn every ${def.name} achievement to unlock its signature livery, <b>${sig.name}</b>.</p>`}
+      <p class="sighint">Paint is won from reward cards. Each car also has a signature livery that only it can wear, offered while you drive it.</p>
       <p class="perk" id="gmsg"></p>`;
-  } else body=achList(id);
+  }
   openCard(`<h2>Garage</h2>
     <div class="carpick">${picks}</div>
     <div class="stage"><canvas id="gcar" aria-label="${def.name}"></canvas>
@@ -67,11 +65,6 @@ function renderGarage(){
   $('gcar').onclick=()=>{ GV.bounce=1; audioInit(); sfx('bump',.5); };
   startPreview();
 }
-function achList(id){
-  return `<div class="achl">${ACHIEVEMENTS.filter(a=>a.car===id).map((a,i)=>{ const got=!!GARAGE.ach[a.id];
-    return `<div class="achr${got?'':' no'}" style="animation-delay:${i*.06}s">${trophySvg(got?'gold':null,30)}<div><b>${a.name}</b><small>${a.desc}</small></div><em>${got?'Done':'Bonus pick'}</em></div>`; }).join('')}</div>
-    ${owned(id)?'':`<p class="sighint">Achievements count once you own the ${carDef(id).name} and drive it.</p>`}`;
-}
 // the car in the garage bobs on its springs and twitches its wheels; tap it to bounce it
 function startPreview(){
   cancelAnimationFrame(GV.raf); const cv=$('gcar'); if(!cv) return; const t0=performance.now();
@@ -85,7 +78,7 @@ function startPreview(){
 function nope(el,msg){ sfx('nope'); if(el){ el.classList.remove('nope'); void el.offsetWidth; el.classList.add('nope'); } if(msg&&$('gmsg')) $('gmsg').textContent=msg; }
 function pickLivery(b){
   const lid=b.dataset.liv, L=LIVERIES.find(l=>l.id===lid), cs=GARAGE.cars[GV.car]; audioInit();
-  if(!liveryOwned(lid,GV.car)) return nope(b,L.sig?`Earn every ${carDef(GV.car).name} achievement to unlock ${L.name}.`:`${L.name} is won from reward cards. Finish a stage in the top three, then choose it from the reward cards.`);
+  if(!liveryOwned(lid,GV.car)) return nope(b,`${L.name} is won from reward cards. Finish a stage in the top three, then choose it from the reward cards.`);
   sfx('tick'); cs.livery=lid; saveGarage(); GV.bounce=1; renderGarage();
 }
 function setNumber(d){ const cs=GARAGE.cars[GV.car]; cs.number=((cs.number-1+d+99)%99)+1; saveGarage(); $('numV').textContent=cs.number; audioInit(); sfx('tick'); startPreview(); }

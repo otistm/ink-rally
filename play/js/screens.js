@@ -40,10 +40,10 @@ function showHome(){
       <div class="ev"><i>Stage ${i+1} · ${SURF[def.surface].name} · ${(st.length/1000).toFixed(1)} km</i><b>${def.name}</b><span>${def.blurb}</span></div></button>`; }).join('');
   const car=carDef(GARAGE.car);
   openCard(`<h2 class="logo">Ink Rally</h2><p>Drive fast. Stay on the road. Get trophies.</p>
-    <button class="shopbtn" id="toGarage"><canvas></canvas><span><b>Garage</b><small>${car.name} · cars, upgrades and paint</small></span></button>
-    ${ONLINE?`<p class="asname">Driving as <b>${esc(meta.name)}</b>${meta.grp?` in <b>${esc(meta.grp)}</b>`:''} <button class="linkbtn" id="editName">Change name or group</button></p>
-    <p class="netline" id="netline">Going online…</p>`:''}
+    ${ONLINE?`<p class="asname">Driving as <b>${esc(meta.name)}</b>${meta.grp?` in <b>${esc(meta.grp)}</b>`:''} <button class="linkbtn" id="editName">Change name or group</button></p>`:''}
     <div class="events">${rows}</div>
+    <button class="shopbtn under" id="toGarage"><canvas></canvas><span><b>Garage</b><small>${car.name} · cars, upgrades and paint</small></span></button>
+    ${ONLINE?'<p class="netline center" id="netline">Going online…</p>':''}
     <button class="fbc${voiceOn?' on':''}" id="voiceBtn" aria-pressed="${voiceOn}">Co-driver voice: ${voiceOn?'on':'off'}</button>
     <p class="ver">Version ${VERSION}</p>`,true);
   document.querySelectorAll('.event').forEach(b=>b.onclick=()=>{ audioInit(); startStage(b.dataset.id); });
@@ -64,7 +64,7 @@ function showPause(){
   $('pRestart').onclick=()=>startStage(S.def.id);
   $('pHome').onclick=showHome;
 }
-/* The finish card. A podium place (and each achievement) earns a reward pick, chosen from cards like Ink Nine's.
+/* The finish card. A podium place earns a reward pick, chosen from cards like Ink Nine's.
    The buttons to move on appear once every pick is made, so a reward is never skipped by accident. */
 function showFinish(again){
   if(!again||!S.fin){
